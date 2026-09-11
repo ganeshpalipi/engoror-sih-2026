@@ -71,7 +71,7 @@ class Settings(BaseSettings):
     ASR_DEVICE: str = "cpu"              # CPU required baseline; "cuda" optional
     ASR_COMPUTE_TYPE: str = "int8"       # INT8 quantisation on CPU (set "float32" if issues)
     ASR_LANGUAGE: str = "hi"             # force Hindi ("auto" = let Whisper detect)
-    ASR_BEAM_SIZE: int = 5
+    ASR_BEAM_SIZE: int = 1
     ASR_CPU_THREADS: int = 0             # 0 = let faster-whisper use all logical cores
     ASR_MAX_AUDIO_SECONDS: float = 120.0 # classroom sentences are short; guard RAM
     ASR_PRELOAD_ON_STARTUP: bool = False # lazy-load on first request keeps boot fast

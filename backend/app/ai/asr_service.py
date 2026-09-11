@@ -7,7 +7,7 @@ OpenAI/Google/Azure/AWS speech service is used anywhere.
 
 Offline-first policy (mirrors model_manager.py):
 - The model downloads ONCE (public HF repo `Systran/faster-whisper-<size>`,
-  no token needed) into backend/model_cache/asr/ - a folder that is
+no token needed) into backend/model_cache/asr/ - a folder that is
   deliberately SEPARATE from the translation cache (model_cache/hf) so the
   working Phase 2 IndicTrans2 files can never be touched.
 - After that one download, loading always resolves to the local snapshot
@@ -264,12 +264,39 @@ class ASRService:
             with self._infer_lock:
                 model = self._require_model()
                 segments, info = model.transcribe(
-                    audio,
-                    language=None if forced_language == "auto" else forced_language,
-                    beam_size=settings.ASR_BEAM_SIZE,
-                    vad_filter=True,                    # skip silence (avoids hallucinated text)
-                    condition_on_previous_text=False,   # short independent classroom sentences
-                )
+    audio,
+    language=None if forced_language == "auto" else forced_language,
+
+    # Faster CPU decoding for short classroom sentences
+    beam_size=settings.ASR_BEAM_SIZE,
+    temperature=0.0,
+
+    # Reduce silence/noise hallucinations
+    vad_filter=True,
+    vad_parameters=dict(
+        threshold=0.6,
+        min_speech_duration_ms=250,
+        min_silence_duration_ms=300,
+        speech_pad_ms=150,
+    ),
+
+    no_speech_threshold=0.6,
+    log_prob_threshold=-1.0,
+    compression_ratio_threshold=2.4,
+
+    # Every classroom sentence is independent
+    condition_on_previous_text=False,
+
+    # Hindi classroom vocabulary hint
+    initial_prompt=(
+        "यह प्राथमिक विद्यालय की हिंदी कक्षा है। "
+        "किताब खोलो। ध्यान से सुनो। अपना नाम लिखो। "
+        "एक से दस तक गिनो। पढ़ो। लिखो। बोलो।"
+    ),
+
+    # We only need text, not timestamps
+    without_timestamps=True,
+)
                 chunks = [seg.text.strip() for seg in segments]
         except ASRModelError:
             raise
