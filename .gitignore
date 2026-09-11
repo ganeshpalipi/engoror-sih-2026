@@ -1,0 +1,73 @@
+# ==========================================================
+# RootVerse - .gitignore
+# Never commit: secrets (.env), venvs, model weights, node_modules
+# ==========================================================
+
+# ----- Python / backend -----
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+
+# ----- Environment variables (SECRETS - never push to GitHub) -----
+.env
+.env.local
+.env.*.local
+
+# ----- SQLite databases (local data only) -----
+*.db
+*.sqlite3
+*.sqlite
+
+# ----- AI model weights (multi-GB - keep in model_cache, never in Git) -----
+backend/model_cache/*
+!backend/model_cache/.gitkeep
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.gguf
+
+# ----- Generated media (regenerable outputs) -----
+backend/generated_files/*
+!backend/generated_files/.gitkeep
+*.wav
+*.mp3
+*.m4a
+*.ogg
+# Small verified audio for the phrase pack MAY be committed:
+!datasets/**/*.wav
+!datasets/**/*.mp3
+!backend/app/static/**/*.wav
+!backend/app/static/**/*.mp3
+
+# ----- Node / frontend -----
+node_modules/
+dist/
+dist-ssr/
+.vite/
+*.local
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----- Logs -----
+logs/
+*.log
+
+# ----- OS / editors -----
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

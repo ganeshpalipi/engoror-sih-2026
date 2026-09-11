@@ -1,0 +1,13 @@
+# Hindi classroom sentences used to test ASR / MT in later phases.
+# Encoding: UTF-8. One sentence per line. Lines starting with # are comments.
+
+अपनी किताब खोलो।
+कक्षा में शांत रहो।
+सब लोग खड़े हो जाओ।
+ध्यान से सुनो।
+मेरे बाद दोहराओ।
+एक से दस तक गिनो।
+बहुत अच्छा किया!
+अपना नाम लिखो।
+आज हम रंगों के बारे में सीखेंगे।
+यह एक आम है।
