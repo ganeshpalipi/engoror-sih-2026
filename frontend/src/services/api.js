@@ -63,7 +63,24 @@ export async function apiPost(path, body) {
   }
 }
 
-// GET /api/models/status -> { offline, translation: { model, direction, status, device, detail } }
+// GET /api/models/status -> { offline, translation: {...}, asr: {...} }
 export async function getTranslationModelStatus() {
   return apiGet('/api/models/status')
+}
+
+// POST an audio Blob as multipart/form-data (Phase 3 microphone recordings).
+// Used for /api/asr/transcribe and /api/classroom/speech-translate.
+export async function apiPostAudio(path, blob, filename, language = 'hi') {
+  try {
+    const form = new FormData()
+    form.append('file', blob, filename)
+    form.append('language', language)
+    const res = await fetch(`${BASE_URL}${path}`, {
+      method: 'POST',
+      body: form, // browser sets the multipart boundary - no Content-Type header here
+    })
+    return await handleResponse(res)
+  } catch (err) {
+    throw friendlyNetworkError(err)
+  }
 }

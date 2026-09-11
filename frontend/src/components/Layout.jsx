@@ -57,7 +57,7 @@ export default function Layout() {
         <p className="sidebar-foot">
           Offline-first · SIH 2026
           <br />
-          Phase 1 skeleton
+          Phase 3: offline ASR live
         </p>
       </aside>
 

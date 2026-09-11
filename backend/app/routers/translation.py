@@ -14,11 +14,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.ai import translation_service
+from app.ai.asr_service import asr_service
 from app.ai.model_manager import model_manager
 from app.config import settings
 from app.database import get_db
 from app.models import TranslationHistory
 from app.schemas.translation import (
+    ASRModelStatus,
     ModelStatusResponse,
     TranslateTextRequest,
     TranslateTextResponse,
@@ -108,4 +110,5 @@ def models_status() -> ModelStatusResponse:
     return ModelStatusResponse(
         offline=snapshot["offline"],
         translation=snapshot["translation"],
+        asr=ASRModelStatus(**asr_service.status()),
     )

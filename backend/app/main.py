@@ -17,9 +17,16 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.database import Base, engine
-from app.models import FlnLesson, ClassroomPhrase, ModelMetadata, TranslationHistory  # noqa: F401 (registers tables)
+from app.models import (  # noqa: F401 (registers tables)
+    AsrTranscription,
+    FlnLesson,
+    ClassroomPhrase,
+    ModelMetadata,
+    TranslationHistory,
+)
+from app.ai.asr_service import asr_service
 from app.ai.model_manager import model_manager
-from app.routers import health, translation
+from app.routers import asr, health, translation
 from app.services.seed_service import seed_if_empty
 from app.utils.logger import setup_logging
 
@@ -52,6 +59,11 @@ async def lifespan(app: FastAPI):
     # (never downloads; if missing, the first request handles setup)
     model_manager.load_from_cache_in_background()
 
+    # Phase 3: optionally warm the ASR model from the local cache too
+    # (disabled by default so server start stays fast)
+    if settings.ASR_PRELOAD_ON_STARTUP:
+        asr_service.load_from_cache_in_background()
+
     yield
 
     logger.info("Shutting down %s", settings.APP_NAME)
@@ -81,6 +93,7 @@ app.add_middleware(
 # ----- Routers (one per domain, added phase by phase) -----
 app.include_router(health.router)
 app.include_router(translation.router)
+app.include_router(asr.router)
 
 
 # ----- Global safety net -----

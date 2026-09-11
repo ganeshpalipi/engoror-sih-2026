@@ -54,8 +54,22 @@ class TranslationModelStatus(BaseModel):
     detail: str = ""
 
 
+class ASRModelStatus(BaseModel):
+    """Status of the offline speech-recognition model (Phase 3)."""
+
+    model: str
+    direction: str
+    status: str = Field(
+        description="not_downloaded | not_loaded | loading | ready | error"
+    )
+    downloaded: bool = False
+    device: str | None = None
+    detail: str = ""
+
+
 class ModelStatusResponse(BaseModel):
     """Response for GET /api/models/status."""
 
     offline: bool
     translation: TranslationModelStatus
+    asr: ASRModelStatus | None = None  # Phase 3 (additive)

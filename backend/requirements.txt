@@ -44,3 +44,17 @@ safetensors>=0.4.5
 # prerequisite of this project). The MODEL WEIGHTS come from Hugging Face
 # (one-time gated download; see .env.example for HF_TOKEN steps).
 IndicTransToolkit @ git+https://github.com/VarunGumma/IndicTransToolkit.git
+
+# ==========================================================
+# AI: Offline Hindi ASR (Phase 3) - faster-whisper
+# CTranslate2 port of OpenAI Whisper. Open weights, local CPU
+# inference (INT8), no cloud API. Model downloads ONCE (public
+# repo, no HF token needed) into backend/model_cache/asr.
+# ==========================================================
+faster-whisper==1.1.1
+# faster-whisper 1.1.1 imports `requests` without declaring it.
+# (transformers already brings it in; pinned here so ASR-only installs work.)
+requests==2.32.3
+
+# Multipart/form-data parsing for audio file uploads (POST /api/asr/*)
+python-multipart==0.0.20
