@@ -216,6 +216,12 @@ p { margin: 0 0 10px; }
 .status-label { font-weight: 600; color: var(--navy); }
 .status-detail { color: var(--muted); font-size: 13px; }
 
+/* Gentle pulse for the "recording" indicator (respects reduced motion) */
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) {
+  .status-dot { animation: none !important; }
+}
+
 /* ----- Pipeline ----- */
 .pipeline {
   list-style: none;

@@ -60,6 +60,41 @@ class Settings(BaseSettings):
     # weights; inference itself is local). Put it in backend/.env - never commit it.
     HF_TOKEN: str = ""
 
+    # ----- AI / speech recognition (Phase 3) -----
+    # Offline Hindi ASR with faster-whisper (CTranslate2 port of OpenAI Whisper,
+    # open weights, local CPU inference, no cloud API). The model downloads ONCE
+    # into backend/model_cache/asr (public repo - no HF token needed), then it
+    # is fully offline.
+    # "small" is the practical accuracy/speed balance for Hindi on a laptop CPU;
+    # set ASR_MODEL_SIZE=base on low-end hardware (less accurate, faster).
+    ASR_MODEL_SIZE: str = "small"        # tiny | base | small | medium
+    ASR_DEVICE: str = "cpu"              # CPU required baseline; "cuda" optional
+    ASR_COMPUTE_TYPE: str = "int8"       # INT8 quantisation on CPU (set "float32" if issues)
+    ASR_LANGUAGE: str = "hi"             # force Hindi ("auto" = let Whisper detect)
+    ASR_BEAM_SIZE: int = 5
+    ASR_CPU_THREADS: int = 0             # 0 = let faster-whisper use all logical cores
+    ASR_MAX_AUDIO_SECONDS: float = 120.0 # classroom sentences are short; guard RAM
+    ASR_PRELOAD_ON_STARTUP: bool = False # lazy-load on first request keeps boot fast
+
+    # ----- AI / text-to-speech (Phase 4) -----
+    # Offline Santali TTS. The ONLY open-source model found that genuinely
+    # supports Santali (verified: facebook/mms-tts-sat does NOT exist - the
+    # complete MMS TTS catalog has no 'sat' entry, and the official Piper
+    # voices catalog has no Santali voice either). This community voice is a
+    # Piper-format VITS model (~60 MB) whose phoneme map covers the Ol Chiki
+    # Unicode block (U+1C50-U+1C7F) directly, so Santali Ol Chiki text goes in
+    # as-is. Runs on CPU via onnxruntime; downloads ONCE (public repo, no
+    # token) into backend/model_cache/tts, then works with Wi-Fi off.
+    # NOTE: pronunciation quality still needs native-speaker validation.
+    TTS_MODEL_ID: str = "Ashraf01k/vernacular-pedagogy-santhali"
+    TTS_MODEL_FILE: str = "sat_piper_model.onnx"
+    TTS_CONFIG_FILE: str = "sat_piper_model.onnx.json"
+    TTS_DEVICE: str = "cpu"              # onnxruntime CPU (baseline for schools)
+    TTS_PRELOAD_ON_STARTUP: bool = False
+    TTS_SAMPLE_RATE: int = 16000         # fallback; real rate is read from the model config
+    TTS_MAX_TEXT_LENGTH: int = 500       # chars of Ol Chiki text per request
+    TTS_NUM_THREADS: int = 0             # 0 = let onnxruntime use all logical cores
+
     # ----- Logging -----
     LOG_LEVEL: str = "INFO"
 
@@ -79,6 +114,30 @@ class Settings(BaseSettings):
     def generated_files_path(self) -> Path:
         """Generated-files directory, created on demand (Windows-safe)."""
         path = Path(self.GENERATED_FILES_DIR)
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def asr_model_path(self) -> Path:
+        """
+        ASR model cache directory: backend/model_cache/asr.
+
+        Deliberately SEPARATE from the translation cache (model_cache/hf) so a
+        Phase 3 re-download can never touch the working IndicTrans2 files.
+        """
+        path = self.model_cache_path / "asr"
+        path.mkdir(parents=True, exist_ok=True)
+        return path
+
+    @property
+    def tts_model_path(self) -> Path:
+        """
+        TTS model cache directory: backend/model_cache/tts.
+
+        Deliberately SEPARATE from the translation (hf) and ASR caches so a
+        Phase 4 re-download can never touch the working model files.
+        """
+        path = self.model_cache_path / "tts"
         path.mkdir(parents=True, exist_ok=True)
         return path
 

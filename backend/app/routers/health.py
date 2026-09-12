@@ -1,7 +1,7 @@
 """
 Health check endpoints.
 
-GET /health -> component-level status (API + database + offline mode)
+GET /health -> component-level status (API + database + offline mode + AI models)
 GET /       -> simple service info
 """
 
@@ -9,6 +9,9 @@ import logging
 
 from fastapi import APIRouter
 
+from app.ai.asr_service import asr_service
+from app.ai.model_manager import model_manager
+from app.ai.tts_service import tts_service
 from app.config import settings
 from app.database import check_database_connection
 from app.schemas.health import ComponentStatus, HealthResponse
@@ -16,6 +19,49 @@ from app.schemas.health import ComponentStatus, HealthResponse
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Health"])
+
+
+def _asr_component() -> ComponentStatus:
+    """ASR readiness: model cached locally = offline-ready (not_downloaded = setup needed)."""
+    st = asr_service.status()
+    if st["status"] == "ready":
+        return ComponentStatus(status="ok", detail=f"ASR loaded - {st['detail']}")
+    if st["downloaded"]:
+        return ComponentStatus(
+            status="ok",
+            detail="ASR model cached (offline-ready); loads on first use",
+        )
+    return ComponentStatus(
+        status="not_ready",
+        detail="ASR model not downloaded yet - run scripts\\download_asr_model.py once",
+    )
+
+
+def _translation_component() -> ComponentStatus:
+    st = model_manager.translation_status()
+    if st["status"] == "ready":
+        return ComponentStatus(status="ok", detail=f"Translation model {st['status']}")
+    if st["status"] == "error":
+        return ComponentStatus(status="error", detail=st["detail"] or "Translation model failed to load")
+    return ComponentStatus(status="not_ready", detail=f"Translation model {st['status']}")
+
+
+def _tts_component() -> ComponentStatus:
+    """Santali TTS readiness (Phase 4)."""
+    st = tts_service.status()
+    if st["status"] == "ready":
+        return ComponentStatus(status="ok", detail=f"TTS loaded - {st['detail']}")
+    if st["status"] == "error":
+        return ComponentStatus(status="error", detail=st["detail"] or "Santali TTS model failed to load")
+    if st["downloaded"]:
+        return ComponentStatus(
+            status="ok",
+            detail="Santali TTS model cached (offline-ready); loads on first use",
+        )
+    return ComponentStatus(
+        status="not_ready",
+        detail="Santali TTS model not downloaded yet - run scripts\\download_tts_model.py once",
+    )
 
 
 @router.get(
@@ -46,6 +92,9 @@ def health_check() -> HealthResponse:
                 status="ok" if db_ok else "error",
                 detail="SQLite connection verified" if db_ok else "SQLite connection failed",
             ),
+            "asr": _asr_component(),
+            "translation": _translation_component(),
+            "tts": _tts_component(),
         },
     )
 
