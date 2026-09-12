@@ -26,7 +26,8 @@ from app.models import (  # noqa: F401 (registers tables)
 )
 from app.ai.asr_service import asr_service
 from app.ai.model_manager import model_manager
-from app.routers import asr, health, translation
+from app.ai.tts_service import tts_service
+from app.routers import asr, health, translation, tts
 from app.services.seed_service import seed_if_empty
 from app.utils.logger import setup_logging
 
@@ -64,6 +65,11 @@ async def lifespan(app: FastAPI):
     if settings.ASR_PRELOAD_ON_STARTUP:
         asr_service.load_from_cache_in_background()
 
+    # Phase 4: optionally warm the Santali TTS voice from the local cache
+    # (disabled by default so server start stays fast)
+    if settings.TTS_PRELOAD_ON_STARTUP:
+        tts_service.load_from_cache_in_background()
+
     yield
 
     logger.info("Shutting down %s", settings.APP_NAME)
@@ -94,6 +100,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(translation.router)
 app.include_router(asr.router)
+app.include_router(tts.router)
 
 
 # ----- Global safety net -----

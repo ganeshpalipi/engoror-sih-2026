@@ -13,7 +13,6 @@ function filenameForMime(mimeType) {
   if (mimeType.includes('wav')) return 'recording.wav'
   return 'recording.audio'
 }
-
 function ModelCard({ label, state, detail }) {
   const dot = state === 'ok' ? 'ok' : state === 'error' ? 'err' : 'wait'
   return (
@@ -40,8 +39,10 @@ export default function LiveTranslation() {
   const [asrOnly, setAsrOnly] = useState(null) // /api/asr/transcribe result
   const [replayUrl, setReplayUrl] = useState('')
   const [uploadFile, setUploadFile] = useState(null)
+  const [playing, setPlaying] = useState(false)
   const replayRef = useRef('')
   const fileInputRef = useRef(null)
+  const studentAudioRef = useRef(null)
 
   // Revoke the previous object URL whenever a new one is set.
   useEffect(() => {
@@ -56,6 +57,7 @@ export default function LiveTranslation() {
   const asrComp = health?.components?.asr
   const mtComp = health?.components?.translation
   const dbComp = health?.components?.database
+  const ttsComp = health?.components?.tts
 
   const recording = recorder.state === 'recording'
   const busy = processing
@@ -64,6 +66,7 @@ export default function LiveTranslation() {
     setSpeech(null)
     setAsrOnly(null)
     setError('')
+    setPlaying(false)
   }
 
   async function processBlob(blob, filename) {
@@ -137,7 +140,8 @@ export default function LiveTranslation() {
       <p className="hindi subtitle">बोलिए हिंदी में → संथाली (ओल चिकी)</p>
       <p className="muted">
         Teacher speaks Hindi → offline speech recognition → Hindi text → the Phase 2
-        IndicTrans2 translator → Santali in Ol Chiki. Everything runs on this device.
+        IndicTrans2 translator → Santali in Ol Chiki → the Phase 4 offline Santali
+        voice speaks it aloud for the student. Everything runs on this device.
       </p>
 
       {/* Status strip: ASR / Translation / Database */}
@@ -165,6 +169,17 @@ export default function LiveTranslation() {
           }
         />
         <ModelCard
+          label="TTS (Santali speech)"
+          state={ttsComp ? (ttsComp.status === 'not_ready' ? 'wait' : ttsComp.status) : 'wait'}
+          detail={
+            ttsComp
+              ? ttsComp.status === 'ok'
+                ? 'Offline · model cached'
+                : ttsComp.detail
+              : 'Checking…'
+          }
+        />
+        <ModelCard
           label="Database (SQLite)"
           state={dbComp ? dbComp.status : 'wait'}
           detail={dbComp ? (dbComp.status === 'ok' ? 'Connected' : dbComp.detail) : 'Checking…'}
@@ -182,6 +197,10 @@ export default function LiveTranslation() {
         <li className="pipeline-step"><span className="step-num">4</span> IndicTrans2</li>
         <li className="pipeline-arrow">→</li>
         <li className="pipeline-step"><span className="step-num">5</span> Santali (Ol Chiki)</li>
+        <li className="pipeline-arrow">→</li>
+        <li className="pipeline-step"><span className="step-num">6</span> Offline TTS</li>
+        <li className="pipeline-arrow">→</li>
+        <li className="pipeline-step"><span className="step-num">7</span> 🔊 Student hears Santali</li>
       </ul>
 
       {/* Recorder */}
@@ -340,6 +359,60 @@ export default function LiveTranslation() {
               <p className="status-detail" style={{ marginBottom: 0 }}>
                 Translation {speech.translation_latency_ms} ms · {speech.translation_model} ·
                 {' '}total {speech.total_latency_ms} ms · {speech.offline ? 'local inference (offline)' : ''}
+              </p>
+            </section>
+          )}
+
+          {speech.success && speech.audio_available && speech.audio_url && (
+            <section className="card" style={{ marginTop: 14 }} aria-label="Student audio">
+              <h2>Student Audio</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    const el = studentAudioRef.current
+                    if (!el) return
+                    if (el.paused) {
+                      el.play().catch(() => setError('Could not play the Santali audio. Try again.'))
+                    } else {
+                      el.pause()
+                    }
+                  }}
+                >
+                  {playing ? '⏸ Pause Santali Audio' : '▶ Play Santali Audio'}
+                </button>
+                <audio
+                  ref={studentAudioRef}
+                  controls
+                  preload="none"
+                  src={speech.audio_url}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={() => setPlaying(false)}
+                  onError={() => setError('The Santali audio file could not be loaded. Please record again.')}
+                  style={{ width: '100%', maxWidth: 420 }}
+                  aria-label="Generated Santali speech playback"
+                />
+              </div>
+              <p className="status-detail" style={{ marginTop: 10, marginBottom: 0 }}>
+                Generated locally by the offline Santali voice ({speech.tts_model}) in{' '}
+                {speech.tts_latency_ms} ms · 16 kHz WAV
+              </p>
+              <p style={{ marginBottom: 0 }}>
+                <span className="badge" style={{ marginBottom: 0 }}>{VALIDATION_NOTICE}</span>
+              </p>
+            </section>
+          )}
+
+          {speech.success && !speech.audio_available && speech.tts_message && (
+            <section className="card" style={{ marginTop: 14 }} aria-label="Student audio unavailable">
+              <h2>Student Audio</h2>
+              <p style={{ marginBottom: 6 }}>
+                Santali audio was not generated for this sentence:
+              </p>
+              <p className="status-detail" style={{ marginBottom: 0 }}>
+                {speech.tts_message}
               </p>
             </section>
           )}

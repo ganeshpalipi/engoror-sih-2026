@@ -11,6 +11,7 @@ from fastapi import APIRouter
 
 from app.ai.asr_service import asr_service
 from app.ai.model_manager import model_manager
+from app.ai.tts_service import tts_service
 from app.config import settings
 from app.database import check_database_connection
 from app.schemas.health import ComponentStatus, HealthResponse
@@ -45,6 +46,24 @@ def _translation_component() -> ComponentStatus:
     return ComponentStatus(status="not_ready", detail=f"Translation model {st['status']}")
 
 
+def _tts_component() -> ComponentStatus:
+    """Santali TTS readiness (Phase 4)."""
+    st = tts_service.status()
+    if st["status"] == "ready":
+        return ComponentStatus(status="ok", detail=f"TTS loaded - {st['detail']}")
+    if st["status"] == "error":
+        return ComponentStatus(status="error", detail=st["detail"] or "Santali TTS model failed to load")
+    if st["downloaded"]:
+        return ComponentStatus(
+            status="ok",
+            detail="Santali TTS model cached (offline-ready); loads on first use",
+        )
+    return ComponentStatus(
+        status="not_ready",
+        detail="Santali TTS model not downloaded yet - run scripts\\download_tts_model.py once",
+    )
+
+
 @router.get(
     "/health",
     response_model=HealthResponse,
@@ -75,6 +94,7 @@ def health_check() -> HealthResponse:
             ),
             "asr": _asr_component(),
             "translation": _translation_component(),
+            "tts": _tts_component(),
         },
     )
 

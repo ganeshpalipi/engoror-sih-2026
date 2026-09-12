@@ -1,11 +1,16 @@
 """
-Speech recognition endpoints (Phase 3).
+Speech recognition + full pipeline endpoints (Phase 3 + Phase 4).
 
-POST /api/asr/transcribe            Hindi audio -> Hindi text (offline faster-whisper)
-POST /api/classroom/speech-translate Hindi audio -> Hindi text -> Santali (Ol Chiki)
+POST /api/asr/transcribe              Hindi audio -> Hindi text (offline faster-whisper)
+POST /api/classroom/speech-translate  Hindi audio -> Hindi text -> Santali (Ol Chiki)
+                                      -> Santali speech audio (offline TTS, Phase 4)
 
 The speech-translate endpoint REUSES the existing Phase 2 translation service
 (app.ai.translation_service) - there is no second translation implementation.
+The Phase 4 TTS step reuses the existing tts_service and is best-effort: if
+Santali audio cannot be produced (e.g. voice not downloaded yet), the text
+response still succeeds and carries `audio_available: false` plus a
+teacher-facing `tts_message`.
 
 Every request (success or failure) is recorded locally:
 - asr_transcriptions table  (ASR layer)
@@ -20,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.ai import translation_service
 from app.ai.asr_service import ASRModelError, asr_service
+from app.ai.tts_service import TTSModelError, tts_service
 from app.config import settings
 from app.database import get_db
 from app.models import AsrTranscription, TranslationHistory
@@ -270,10 +276,29 @@ def speech_translate(
         model_name=translation["model"],
     )
 
+    # ---- Step 3: offline Santali TTS (Phase 4, best-effort) ------------
+    # A TTS problem must never lose the (working) text pipeline result:
+    # the teacher still gets the Santali text and a friendly hint instead.
+    santali_text = translation["translated_text"]
+    audio_available = False
+    audio_url = None
+    tts_latency_ms = 0
+    tts_message = None
+    tts_started = time.perf_counter()
+    try:
+        tts = tts_service.synthesize_to_file(santali_text)
+        audio_available = True
+        audio_url = f"/api/tts/audio/{tts['filename']}"
+        tts_latency_ms = tts["latency_ms"]
+    except TTSModelError as exc:
+        tts_message = exc.user_message
+        logger.info("TTS step skipped (%s)", exc.user_message)
+    tts_latency_ms = tts_latency_ms or int((time.perf_counter() - tts_started) * 1000)
+
     return SpeechTranslateResponse(
         success=True,
         recognized_hindi=hindi_text,
-        santali_ol_chiki=translation["translated_text"],
+        santali_ol_chiki=santali_text,
         asr_model=asr["model"],
         translation_model=translation["model"],
         asr_latency_ms=asr["latency_ms"],
@@ -281,4 +306,9 @@ def speech_translate(
         total_latency_ms=int((time.perf_counter() - pipeline_started) * 1000),
         offline=settings.OFFLINE_MODE,
         message=None,
+        audio_available=audio_available,
+        audio_url=audio_url,
+        tts_model=tts_service.model_label,
+        tts_latency_ms=tts_latency_ms,
+        tts_message=tts_message,
     )

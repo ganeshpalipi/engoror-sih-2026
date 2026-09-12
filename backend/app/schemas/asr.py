@@ -22,7 +22,7 @@ class TranscribeResponse(BaseModel):
 
 
 class SpeechTranslateResponse(BaseModel):
-    """Response for POST /api/classroom/speech-translate (Phase 3 pipeline)."""
+    """Response for POST /api/classroom/speech-translate (Phase 3+4 pipeline)."""
 
     success: bool
     recognized_hindi: str = ""
@@ -35,3 +35,14 @@ class SpeechTranslateResponse(BaseModel):
     offline: bool = True
     validation_notice: str = VALIDATION_NOTICE
     message: str | None = None
+    # ---- Phase 4 additions (Santali audio for the student) ----
+    # All optional with safe defaults so the Phase 3 response shape is
+    # preserved for every existing consumer.
+    audio_available: bool = False
+    audio_url: str | None = None
+    tts_model: str = ""
+    tts_latency_ms: int = 0
+    tts_message: str | None = Field(
+        default=None,
+        description="Why Santali audio is not available (e.g. model not downloaded)",
+    )
