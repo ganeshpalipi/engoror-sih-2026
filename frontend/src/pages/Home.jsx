@@ -1,137 +1,162 @@
+import { Link } from 'react-router-dom'
 import { getHealth } from '../services/api'
 import { useApiStatus } from '../hooks/useApiStatus'
-import { statusClass } from '../utils/format'
 
-const PIPELINE_STEPS = [
-  'Teacher speaks Hindi',
-  'Offline Hindi ASR',
-  'Hindi text',
-  'Hindi → Santhali MT',
-  'Ol Chiki text',
-  'Offline Santhali TTS',
-  'Students hear Santhali',
+const FEATURES = [
+  {
+    title: 'Live Classroom Translation',
+    desc: 'Speak in Hindi and help students understand the lesson in Santali.',
+    cta: 'Start Translation',
+    to: '/live-translation',
+  },
+  {
+    title: 'FLN Learning',
+    desc: 'Foundational literacy and numeracy activities for primary classrooms.',
+    cta: 'Explore Lessons',
+    to: '/lessons',
+  },
+  {
+    title: 'Classroom Phrase Pack',
+    desc: 'Quick everyday classroom instructions translated for students.',
+    cta: 'Open Phrase Pack',
+    to: '/phrases',
+  },
+  {
+    title: 'Worksheet Creator',
+    desc: 'Create printable bilingual learning activities for literacy and numeracy.',
+    cta: 'Create Worksheet',
+    to: '/worksheets',
+  },
+  {
+    title: 'Visual Flashcards',
+    desc: 'Picture-based vocabulary learning with Hindi, Santali and audio.',
+    cta: 'Explore Flashcards',
+    to: '/flashcards',
+  },
 ]
 
-const ROADMAP = [
-  { phase: 'Phase 1', label: 'Folder structure, FastAPI + Vite skeletons, health endpoint, SQLite config', done: true },
-  { phase: 'Phase 2', label: 'SQLite tables + seed data + real Hindi → Santhali translation (IndicTrans2, local)', done: true },
-  { phase: 'Phase 3', label: 'Offline Hindi ASR module', done: false },
-  { phase: 'Phase 4', label: 'Offline Santhali TTS module', done: false },
-  { phase: 'Phase 5', label: 'Full speech-to-speech pipeline with latency tracking', done: false },
-  { phase: 'Phase 6', label: 'Frontend pages connected to live APIs', done: false },
-  { phase: 'Phase 7–9', label: 'Phrase pack, FLN lessons, worksheets, flashcards, offline sync', done: false },
-  { phase: 'Phase 10', label: 'Testing, latency measurement and optimisation', done: false },
+const FLOW = [
+  'Teacher speaks Hindi',
+  'Engoror understands',
+  'Translates to Santali',
+  'Students read and hear Santali',
 ]
 
 export default function Home() {
   const { data: health, error, loading } = useApiStatus(getHealth)
 
-  return (
-    <div>
-      <h1>RootVerse — Classroom Language Bridge</h1>
-      <p className="hindi subtitle">हिंदी शिक्षक की आवाज़ → संथाली छात्रों के लिए आवाज़</p>
-      <p className="muted">
-        Offline-first AI bridge for mother-tongue-based primary education.
-        Prototype language: Santhali, written in Ol Chiki script.
-      </p>
+  const backendReady = Boolean(health && health.status === 'ok')
 
-      {/* Core pipeline */}
-      <section className="card" aria-label="Translation pipeline">
-        <h2>Core pipeline</h2>
-        <ol className="pipeline">
-          {PIPELINE_STEPS.map((step, i) => (
-            <li key={step} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span className="pipeline-step">
-                <span className="step-num" aria-hidden="true">{i + 1}</span>
-                {step}
-              </span>
-              {i < PIPELINE_STEPS.length - 1 && (
-                <span className="pipeline-arrow" aria-hidden="true">→</span>
-              )}
-            </li>
-          ))}
-        </ol>
-        <p className="muted" style={{ marginBottom: 0 }}>
-          Every stage runs offline on the teacher&apos;s Windows laptop after a one-time
-          model download. No cloud API is used in the core pipeline.
+  return (
+    <div className="engoror-home">
+      <section className="hero-card">
+        <span className="hero-badge">BUILT FOR LOW-CONNECTIVITY CLASSROOMS</span>
+
+        <h1>
+          Teach in your language.
+          <br />
+          Let every child learn in theirs.
+        </h1>
+
+        <p>
+          An offline AI classroom companion that helps teachers communicate,
+          teach and create learning material across language barriers.
         </p>
+
+        <div className="hero-actions">
+          <Link className="btn-primary" to="/live-translation">
+            Start Teaching
+          </Link>
+
+          <Link className="btn-secondary-light" to="/lessons">
+            Explore Lessons
+          </Link>
+        </div>
+
+        <div className="hero-language-sample">
+          <span className="hindi">१२३</span>
+          <span>→</span>
+          <span className="olchiki">᱑᱒᱓</span>
+        </div>
       </section>
 
-      {/* Live backend status (proves the React app talks to FastAPI) */}
-      <section aria-label="Backend status" style={{ marginTop: 18 }}>
-        <h2>Backend status</h2>
+      <section className="home-section">
+        <h2>Everything a multilingual classroom needs</h2>
 
-        {loading && (
-          <div className="card status-row">
-            <span className="status-dot wait" aria-hidden="true" />
-            <span>Checking backend…</span>
+        <div className="feature-grid">
+          {FEATURES.map((item, index) => (
+            <article
+              key={item.title}
+              className={`feature-card tone-${index % 2 === 0 ? 'green' : 'orange'}`}
+            >
+              <div className="feature-icon" aria-hidden="true">
+                {index === 0 && '🎙️'}
+                {index === 1 && '📚'}
+                {index === 2 && '💬'}
+                {index === 3 && '📝'}
+                {index === 4 && '🧩'}
+              </div>
+
+              <h3>{item.title}</h3>
+              <p>{item.desc}</p>
+
+              <Link to={item.to}>{item.cta} →</Link>
+            </article>
+          ))}
+
+          <article className="how-card">
+            <p className="eyebrow">HOW ENGOROR WORKS</p>
+
+            <ol>
+              {FLOW.map((step, index) => (
+                <li key={step}>
+                  <span>{index + 1}</span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+
+            <p className="small-note">
+              Runs locally on the teacher&apos;s computer after initial setup.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="home-section">
+        <div className="status-card">
+          <div>
+            <p className="eyebrow">CLASSROOM STATUS</p>
+            <h2>
+              {loading
+                ? 'Checking classroom service...'
+                : backendReady
+                  ? 'Engoror is ready for class'
+                  : 'Engoror classroom service is not running'}
+            </h2>
+
+            <p className="muted">
+              {backendReady
+                ? 'Local backend, SQLite database and offline AI services are available.'
+                : 'Start the local backend to use translation, lessons, worksheets and audio.'}
+            </p>
           </div>
-        )}
+
+          <div
+            className={`status-pill-large ${
+              backendReady ? 'ready' : loading ? 'wait' : 'error'
+            }`}
+          >
+            {backendReady ? '● Ready' : loading ? '● Checking' : '● Offline'}
+          </div>
+        </div>
 
         {error && (
-          <div className="error-banner" role="alert">
-            <strong>Backend not reachable.</strong> {error}
-          </div>
+          <details className="technical-error">
+            <summary>Technical details</summary>
+            <p>{String(error)}</p>
+          </details>
         )}
-
-        {health && (
-          <div className="grid-cards">
-            <div className="card">
-              <div className="status-row">
-                <span className={`status-dot ${statusClass(health.components.api.status)}`} />
-                <span className="status-label">Backend API</span>
-              </div>
-              <p className="status-detail" style={{ marginBottom: 0 }}>
-                {health.components.api.detail}
-              </p>
-            </div>
-
-            <div className="card">
-              <div className="status-row">
-                <span className={`status-dot ${statusClass(health.components.database.status)}`} />
-                <span className="status-label">Database (SQLite)</span>
-              </div>
-              <p className="status-detail" style={{ marginBottom: 0 }}>
-                {health.components.database.detail}
-              </p>
-            </div>
-
-            <div className="card">
-              <div className="status-row">
-                <span className={`status-dot ${health.offline_mode ? 'ok' : 'wait'}`} />
-                <span className="status-label">Offline mode</span>
-              </div>
-              <p className="status-detail" style={{ marginBottom: 0 }}>
-                {health.offline_mode ? 'ON — no cloud dependency' : 'OFF'}
-              </p>
-            </div>
-
-            <div className="card">
-              <div className="status-row">
-                <span className="status-label">{health.app}</span>
-              </div>
-              <p className="status-detail" style={{ marginBottom: 0 }}>
-                Version {health.version} · overall: {health.status}
-              </p>
-            </div>
-          </div>
-        )}
-      </section>
-
-      {/* Build roadmap */}
-      <section className="card" aria-label="Build roadmap" style={{ marginTop: 18 }}>
-        <h2>Build plan (docs/PROJECT_PLAN.md)</h2>
-        <ul className="roadmap">
-          {ROADMAP.map((item) => (
-            <li key={item.phase}>
-              <span className="phase-tag">{item.phase}</span>
-              <span className={item.done ? 'check' : 'pending'}>
-                {item.done ? '✓ ' : '• '}
-                {item.label}
-              </span>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   )

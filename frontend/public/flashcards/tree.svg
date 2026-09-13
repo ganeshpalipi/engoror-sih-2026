@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Tree">
+  <rect x="52" y="66" width="16" height="44" rx="4" fill="#7a4a1f"/>
+  <circle cx="60" cy="44" r="30" fill="#2e7d32"/>
+  <circle cx="36" cy="56" r="20" fill="#1e5c3d"/>
+  <circle cx="84" cy="56" r="20" fill="#1e5c3d"/>
+  <circle cx="48" cy="34" r="14" fill="#3d8b4f" opacity="0.9"/>
+</svg>
