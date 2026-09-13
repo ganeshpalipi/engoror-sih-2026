@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { apiGet, apiPost } from '../services/api'
+import {
+  IS_SHOWCASE_MODE,
+  apiGet,
+  apiPost,
+} from '../services/api'
 
 export default function Worksheets() {
   const [meta, setMeta] = useState(null)
@@ -8,7 +12,10 @@ export default function Worksheets() {
   const [skill, setSkill] = useState('literacy')
   const [topic, setTopic] = useState('')
   const [count, setCount] = useState(5)
-  const [generating, setGenerating] = useState(false)
+
+  const [generating, setGenerating] =
+    useState(false)
+
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
 
@@ -17,12 +24,15 @@ export default function Worksheets() {
 
     apiGet('/api/worksheets/meta')
       .then((data) => {
-        if (active) setMeta(data)
+        if (active) {
+          setMeta(data)
+        }
       })
       .catch((err) => {
         if (active) {
           setLoadError(
-            err.message || 'Could not load worksheet options',
+            err.message ||
+              'Could not load worksheet options',
           )
         }
       })
@@ -72,7 +82,8 @@ export default function Worksheets() {
       setResult(data)
     } catch (err) {
       setError(
-        err.message || 'Worksheet generation failed',
+        err.message ||
+          'Worksheet generation failed',
       )
     } finally {
       setGenerating(false)
@@ -83,7 +94,9 @@ export default function Worksheets() {
     if (!result) return
 
     const frame =
-      document.getElementById('ws-print-frame')
+      document.getElementById(
+        'ws-print-frame',
+      )
 
     if (frame?.contentWindow) {
       frame.contentWindow.focus()
@@ -91,7 +104,8 @@ export default function Worksheets() {
     }
   }
 
-  const typeLegend = meta?.type_legend || {}
+  const typeLegend =
+    meta?.type_legend || {}
 
   return (
     <div className="eng-worksheets-page">
@@ -103,8 +117,9 @@ export default function Worksheets() {
         <h1>Worksheet Generator</h1>
 
         <p>
-          Create printable bilingual classroom worksheets
-          for foundational literacy and numeracy.
+          Create printable bilingual classroom
+          worksheets for foundational literacy
+          and numeracy.
         </p>
       </header>
 
@@ -115,340 +130,522 @@ export default function Worksheets() {
         </div>
 
         <div>
-          <strong>Literacy + Numeracy</strong>
+          <strong>
+            Literacy + Numeracy
+          </strong>
           <span>FLN focused</span>
         </div>
 
         <div>
           <strong>Printable</strong>
-          <span>Worksheet + answer key</span>
+          <span>
+            Worksheet + answer key
+          </span>
         </div>
       </section>
 
-      {loadError && (
-        <div
-          className="eng-friendly-error"
-          role="alert"
-        >
-          <strong>
-            Worksheet options could not be loaded.
-          </strong>
-          <span>{loadError}</span>
-        </div>
-      )}
+      {IS_SHOWCASE_MODE ? (
+        <>
+          <div className="eng-showcase-content-note">
+            <strong>
+              Worksheet generation is available
+              in the local offline demo.
+            </strong>
 
-      <form
-        className="eng-ws-builder"
-        onSubmit={onGenerate}
-      >
-        <div className="eng-ws-builder-head">
-          <div>
-            <p className="eng-result-label">
-              WORKSHEET SETUP
+            <p>
+              Teachers can choose the class,
+              learning skill, topic and number
+              of questions before generating a
+              printable classroom worksheet.
             </p>
 
-            <h2>Build a worksheet</h2>
+            <p>
+              The local Engoror system builds
+              worksheets from the lesson and
+              vocabulary content stored on the
+              classroom device. A teacher answer
+              key is included with the generated
+              worksheet.
+            </p>
           </div>
 
-          <span className="eng-local-badge">
-            ● Generated locally
-          </span>
-        </div>
+          <section className="eng-ws-builder">
+            <div className="eng-ws-builder-head">
+              <div>
+                <p className="eng-result-label">
+                  LOCAL DEMO WORKFLOW
+                </p>
 
-        <div className="eng-ws-section">
-          <div className="eng-ws-step">
-            <span>1</span>
+                <h2>
+                  Build a classroom worksheet
+                </h2>
+              </div>
 
-            <div>
-              <strong>Choose class</strong>
-              <p>Select the student grade level.</p>
+              <span className="eng-local-badge">
+                ● Local demo feature
+              </span>
             </div>
-          </div>
 
-          <div className="eng-filter-row">
-            {[1, 2, 3].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`eng-filter-chip ${
-                  grade === item ? 'active' : ''
-                }`}
-                onClick={() => setGrade(item)}
-                aria-pressed={grade === item}
-              >
-                Class {item}
-              </button>
-            ))}
-          </div>
-        </div>
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>1</span>
 
-        <div className="eng-ws-section">
-          <div className="eng-ws-step">
-            <span>2</span>
+                <div>
+                  <strong>
+                    Choose class
+                  </strong>
 
-            <div>
-              <strong>Choose skill</strong>
-              <p>
-                Select literacy or numeracy.
-              </p>
+                  <p>
+                    Class 1, Class 2 or
+                    Class 3.
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div className="eng-filter-row">
-            <button
-              type="button"
-              className={`eng-filter-chip ${
-                skill === 'literacy'
-                  ? 'active'
-                  : ''
-              }`}
-              onClick={() => {
-                setSkill('literacy')
-                setResult(null)
-              }}
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>2</span>
+
+                <div>
+                  <strong>
+                    Choose learning skill
+                  </strong>
+
+                  <p>
+                    Literacy or numeracy.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>3</span>
+
+                <div>
+                  <strong>
+                    Choose topic
+                  </strong>
+
+                  <p>
+                    Select a topic from the
+                    local FLN lesson bank.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>4</span>
+
+                <div>
+                  <strong>
+                    Generate and print
+                  </strong>
+
+                  <p>
+                    Create the worksheet,
+                    preview it, print it or
+                    save it as a PDF.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </>
+      ) : (
+        <>
+          {loadError && (
+            <div
+              className="eng-friendly-error"
+              role="alert"
             >
-              साक्षरता · Literacy
-            </button>
-
-            <button
-              type="button"
-              className={`eng-filter-chip ${
-                skill === 'numeracy'
-                  ? 'active'
-                  : ''
-              }`}
-              onClick={() => {
-                setSkill('numeracy')
-                setResult(null)
-              }}
-            >
-              गणित · Numeracy
-            </button>
-          </div>
-        </div>
-
-        <div className="eng-ws-section">
-          <div className="eng-ws-step">
-            <span>3</span>
-
-            <div>
-              <strong>Choose topic</strong>
-              <p>
-                Pick the lesson topic for this sheet.
-              </p>
-            </div>
-          </div>
-
-          <select
-            className="eng-ws-select"
-            value={topic}
-            onChange={(e) =>
-              setTopic(e.target.value)
-            }
-            aria-label="Worksheet topic"
-          >
-            {topicsForSkill.map((item) => (
-              <option
-                key={item.topic}
-                value={item.topic}
-              >
-                {item.label_hindi} ·{' '}
-                {item.label_english}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="eng-ws-section">
-          <div className="eng-ws-step">
-            <span>4</span>
-
-            <div>
               <strong>
-                Number of questions
-              </strong>
-              <p>
-                Choose the worksheet length.
-              </p>
-            </div>
-          </div>
-
-          <div className="eng-filter-row">
-            {[5, 10].map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`eng-filter-chip ${
-                  count === item ? 'active' : ''
-                }`}
-                onClick={() => setCount(item)}
-              >
-                {item} questions
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="eng-ws-generate-area">
-          <button
-            type="submit"
-            className="eng-ws-generate-button"
-            disabled={generating || !topic}
-          >
-            {generating
-              ? 'Generating worksheet...'
-              : 'Generate Worksheet'}
-          </button>
-
-          <span>
-            Bilingual output depends on available
-            Santali translations.
-          </span>
-        </div>
-
-        {generating && (
-          <div className="eng-processing">
-            <span className="eng-spinner" />
-
-            <div>
-              <strong>
-                Preparing your worksheet...
+                Worksheet options could not
+                be loaded.
               </strong>
 
-              <p>
-                Engoror is creating the printable
-                classroom material locally.
-              </p>
-            </div>
-          </div>
-        )}
-      </form>
-
-      {error && (
-        <div
-          className="eng-friendly-error"
-          role="alert"
-        >
-          <strong>
-            Worksheet could not be generated.
-          </strong>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {result && (
-        <section
-          className="eng-ws-result"
-          aria-label="Worksheet ready"
-        >
-          <div className="eng-ws-result-head">
-            <div>
-              <p className="eng-result-label">
-                WORKSHEET READY
-              </p>
-
-              <h2>
-                Class {result.grade} ·{' '}
-                {result.topic_label}
-              </h2>
-
-              <p>
-                {result.question_count} questions
-                {result.types_included?.length
-                  ? ` · ${result.types_included
-                      .map(
-                        (item) =>
-                          typeLegend[item] || item,
-                      )
-                      .join(', ')}`
-                  : ''}
-              </p>
-            </div>
-
-            <span className="eng-success-pill">
-              ✓ Ready to print
-            </span>
-          </div>
-
-          <div className="eng-ws-result-info">
-            <div>
-              <strong>
-                {result.question_count}
-              </strong>
-              <span>Questions</span>
-            </div>
-
-            <div>
-              <strong>
-                {result.santali_available
-                  ? 'Bilingual'
-                  : 'Hindi'}
-              </strong>
-              <span>Worksheet language</span>
-            </div>
-
-            <div>
-              <strong>
-                {result.offline
-                  ? 'Local'
-                  : 'Generated'}
-              </strong>
-              <span>Generation mode</span>
-            </div>
-          </div>
-
-          {!result.santali_available && (
-            <div className="eng-ws-warning">
-              Santali text is not available for all
-              items in this worksheet. The Hindi
-              worksheet can still be used.
+              <span>{loadError}</span>
             </div>
           )}
 
-          {result.validation_notice && (
-            <span className="eng-validation">
-              {result.validation_notice}
-            </span>
+          <form
+            className="eng-ws-builder"
+            onSubmit={onGenerate}
+          >
+            <div className="eng-ws-builder-head">
+              <div>
+                <p className="eng-result-label">
+                  WORKSHEET SETUP
+                </p>
+
+                <h2>
+                  Build a worksheet
+                </h2>
+              </div>
+
+              <span className="eng-local-badge">
+                ● Generated locally
+              </span>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>1</span>
+
+                <div>
+                  <strong>
+                    Choose class
+                  </strong>
+
+                  <p>
+                    Select the student
+                    grade level.
+                  </p>
+                </div>
+              </div>
+
+              <div className="eng-filter-row">
+                {[1, 2, 3].map(
+                  (item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`eng-filter-chip ${
+                        grade === item
+                          ? 'active'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setGrade(item)
+                      }
+                      aria-pressed={
+                        grade === item
+                      }
+                    >
+                      Class {item}
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>2</span>
+
+                <div>
+                  <strong>
+                    Choose skill
+                  </strong>
+
+                  <p>
+                    Select literacy or
+                    numeracy.
+                  </p>
+                </div>
+              </div>
+
+              <div className="eng-filter-row">
+                <button
+                  type="button"
+                  className={`eng-filter-chip ${
+                    skill === 'literacy'
+                      ? 'active'
+                      : ''
+                  }`}
+                  onClick={() => {
+                    setSkill('literacy')
+                    setResult(null)
+                  }}
+                >
+                  साक्षरता · Literacy
+                </button>
+
+                <button
+                  type="button"
+                  className={`eng-filter-chip ${
+                    skill === 'numeracy'
+                      ? 'active'
+                      : ''
+                  }`}
+                  onClick={() => {
+                    setSkill('numeracy')
+                    setResult(null)
+                  }}
+                >
+                  गणित · Numeracy
+                </button>
+              </div>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>3</span>
+
+                <div>
+                  <strong>
+                    Choose topic
+                  </strong>
+
+                  <p>
+                    Pick the lesson topic
+                    for this sheet.
+                  </p>
+                </div>
+              </div>
+
+              <select
+                className="eng-ws-select"
+                value={topic}
+                onChange={(e) =>
+                  setTopic(e.target.value)
+                }
+                aria-label="Worksheet topic"
+              >
+                {topicsForSkill.map(
+                  (item) => (
+                    <option
+                      key={item.topic}
+                      value={item.topic}
+                    >
+                      {item.label_hindi} ·{' '}
+                      {item.label_english}
+                    </option>
+                  ),
+                )}
+              </select>
+            </div>
+
+            <div className="eng-ws-section">
+              <div className="eng-ws-step">
+                <span>4</span>
+
+                <div>
+                  <strong>
+                    Number of questions
+                  </strong>
+
+                  <p>
+                    Choose the worksheet
+                    length.
+                  </p>
+                </div>
+              </div>
+
+              <div className="eng-filter-row">
+                {[5, 10].map(
+                  (item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className={`eng-filter-chip ${
+                        count === item
+                          ? 'active'
+                          : ''
+                      }`}
+                      onClick={() =>
+                        setCount(item)
+                      }
+                    >
+                      {item} questions
+                    </button>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="eng-ws-generate-area">
+              <button
+                type="submit"
+                className="eng-ws-generate-button"
+                disabled={
+                  generating || !topic
+                }
+              >
+                {generating
+                  ? 'Generating worksheet...'
+                  : 'Generate Worksheet'}
+              </button>
+
+              <span>
+                Bilingual output depends on
+                available Santali translations.
+              </span>
+            </div>
+
+            {generating && (
+              <div className="eng-processing">
+                <span className="eng-spinner" />
+
+                <div>
+                  <strong>
+                    Preparing your
+                    worksheet...
+                  </strong>
+
+                  <p>
+                    Engoror is creating the
+                    printable classroom
+                    material locally.
+                  </p>
+                </div>
+              </div>
+            )}
+          </form>
+
+          {error && (
+            <div
+              className="eng-friendly-error"
+              role="alert"
+            >
+              <strong>
+                Worksheet could not be
+                generated.
+              </strong>
+
+              <span>{error}</span>
+            </div>
           )}
 
-          <div className="eng-ws-actions">
-            <a
-              className="eng-ws-primary-action"
-              href={result.html_url}
-              target="_blank"
-              rel="noreferrer"
+          {result && (
+            <section
+              className="eng-ws-result"
+              aria-label="Worksheet ready"
             >
-              Preview Worksheet
-            </a>
+              <div className="eng-ws-result-head">
+                <div>
+                  <p className="eng-result-label">
+                    WORKSHEET READY
+                  </p>
 
-            <button
-              type="button"
-              className="eng-ws-secondary-action"
-              onClick={printWorksheet}
-            >
-              Print Worksheet
-            </button>
+                  <h2>
+                    Class {result.grade} ·{' '}
+                    {result.topic_label}
+                  </h2>
 
-            <a
-              className="eng-ws-secondary-action"
-              href={result.download_url}
-            >
-              Download HTML
-            </a>
-          </div>
+                  <p>
+                    {result.question_count}{' '}
+                    questions
+                    {result.types_included
+                      ?.length
+                      ? ` · ${result.types_included
+                          .map(
+                            (item) =>
+                              typeLegend[
+                                item
+                              ] || item,
+                          )
+                          .join(', ')}`
+                      : ''}
+                  </p>
+                </div>
 
-          <p className="eng-ws-tip">
-            Tip: In the print window choose
-            “Save as PDF” to create a PDF copy.
-          </p>
+                <span className="eng-success-pill">
+                  ✓ Ready to print
+                </span>
+              </div>
 
-          <iframe
-            id="ws-print-frame"
-            src={result.html_url}
-            title="Worksheet print frame"
-            className="eng-ws-print-frame"
-          />
-        </section>
+              <div className="eng-ws-result-info">
+                <div>
+                  <strong>
+                    {result.question_count}
+                  </strong>
+
+                  <span>
+                    Questions
+                  </span>
+                </div>
+
+                <div>
+                  <strong>
+                    {result.santali_available
+                      ? 'Bilingual'
+                      : 'Hindi'}
+                  </strong>
+
+                  <span>
+                    Worksheet language
+                  </span>
+                </div>
+
+                <div>
+                  <strong>
+                    {result.offline
+                      ? 'Local'
+                      : 'Generated'}
+                  </strong>
+
+                  <span>
+                    Generation mode
+                  </span>
+                </div>
+              </div>
+
+              {!result.santali_available && (
+                <div className="eng-ws-warning">
+                  Santali text is not available
+                  for all items in this
+                  worksheet. The Hindi
+                  worksheet can still be used.
+                </div>
+              )}
+
+              {result.validation_notice && (
+                <span className="eng-validation">
+                  {
+                    result.validation_notice
+                  }
+                </span>
+              )}
+
+              <div className="eng-ws-actions">
+                <a
+                  className="eng-ws-primary-action"
+                  href={result.html_url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Preview Worksheet
+                </a>
+
+                <button
+                  type="button"
+                  className="eng-ws-secondary-action"
+                  onClick={
+                    printWorksheet
+                  }
+                >
+                  Print Worksheet
+                </button>
+
+                <a
+                  className="eng-ws-secondary-action"
+                  href={
+                    result.download_url
+                  }
+                >
+                  Download HTML
+                </a>
+              </div>
+
+              <p className="eng-ws-tip">
+                Tip: In the print window
+                choose “Save as PDF” to
+                create a PDF copy.
+              </p>
+
+              <iframe
+                id="ws-print-frame"
+                src={result.html_url}
+                title="Worksheet print frame"
+                className="eng-ws-print-frame"
+              />
+            </section>
+          )}
+        </>
       )}
     </div>
   )
