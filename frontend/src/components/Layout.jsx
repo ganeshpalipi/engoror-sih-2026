@@ -1,28 +1,27 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
-const NAV_ITEMS = [
+const MAIN_NAV = [
   { to: '/', label: 'Home', end: true },
-  { to: '/live-translation', label: 'Live Translation' },
+  { to: '/live-translation', label: 'Live Classroom' },
   { to: '/text-translation', label: 'Text Translation' },
-  { to: '/lessons', label: 'FLN Lessons' },
+  { to: '/lessons', label: 'Learning Hub' },
   { to: '/phrases', label: 'Phrase Pack' },
   { to: '/worksheets', label: 'Worksheets' },
   { to: '/flashcards', label: 'Flashcards' },
+]
+
+const RESOURCE_NAV = [
   { to: '/history', label: 'History' },
-  { to: '/offline-content', label: 'Offline Content' },
-  { to: '/sync', label: 'Sync' },
-  { to: '/settings', label: 'Settings' },
+  { to: '/offline-content', label: 'Offline Library' },
   { to: '/model-status', label: 'Model Status' },
 ]
 
-// App shell: dark navy sidebar (drawer on mobile) + main column with a
-// sticky footer. Large text and targets, calm classroom palette.
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
-    <div className="app-shell">
+    <div className="app-shell engoror-shell">
       {menuOpen && (
         <div
           className="sidebar-backdrop"
@@ -31,22 +30,39 @@ export default function Layout() {
         />
       )}
 
-      <aside className={`sidebar${menuOpen ? ' open' : ''}`} aria-label="Main navigation">
+      <aside className={`sidebar engoror-sidebar${menuOpen ? ' open' : ''}`}>
         <div className="sidebar-brand">
-          <span className="brand-mark" aria-hidden="true">R</span>
+          <span className="brand-mark engoror-mark">E</span>
           <div>
-            <p className="brand-name">RootVerse</p>
-            <p className="brand-tag">Hindi ⇄ Santhali bridge</p>
+            <p className="brand-name">Engoror</p>
+            <p className="brand-tag">Classroom AI</p>
           </div>
         </div>
 
-        <nav>
-          {NAV_ITEMS.map((item) => (
+        <nav className="engoror-nav">
+          {MAIN_NAV.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               end={item.end}
-              className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}
+              className={({ isActive }) =>
+                `nav-link${isActive ? ' active' : ''}`
+              }
+              onClick={() => setMenuOpen(false)}
+            >
+              {item.label}
+            </NavLink>
+          ))}
+
+          <p className="nav-section-label">RESOURCES</p>
+
+          {RESOURCE_NAV.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `nav-link${isActive ? ' active' : ''}`
+              }
               onClick={() => setMenuOpen(false)}
             >
               {item.label}
@@ -54,15 +70,15 @@ export default function Layout() {
           ))}
         </nav>
 
-        <p className="sidebar-foot">
-          Offline-first · SIH 2026
-          <br />
-          Phase 5: FLN classroom content live
-        </p>
+        <div className="sidebar-foot engoror-sidebar-foot">
+          <strong>● Offline Ready</strong>
+          <span>Hindi → Santali</span>
+          <span>SIH 2026 Prototype</span>
+        </div>
       </aside>
 
       <div className="main-area">
-        <header className="topbar">
+        <header className="topbar engoror-topbar">
           <button
             type="button"
             className="hamburger"
@@ -72,17 +88,24 @@ export default function Layout() {
           >
             ☰
           </button>
-          <span className="topbar-title">RootVerse</span>
-          <span className="topbar-badge">SIH 2026</span>
+
+          <div className="topbar-mobile-brand">
+            <span className="brand-mark small">E</span>
+            <span className="topbar-title">Engoror</span>
+          </div>
+
+          <span className="offline-pill">● Offline AI Ready</span>
         </header>
 
-        <main className="page">
+        <main className="page engoror-page">
           <Outlet />
         </main>
 
-        <footer className="footer">
-          <span>RootVerse — AI-powered vernacular pedagogy for primary education</span>
-          <span>Hindi → Santhali (Ol Chiki) · Offline-first</span>
+        <footer className="footer engoror-footer">
+          <span>
+            <strong>Engoror</strong> — Language should never be a barrier to learning.
+          </span>
+          <span>Hindi → Santali · SIH 2026 Prototype</span>
         </footer>
       </div>
     </div>
