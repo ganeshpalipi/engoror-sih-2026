@@ -14,50 +14,66 @@ export default function Worksheets() {
 
   useEffect(() => {
     let active = true
+
     apiGet('/api/worksheets/meta')
-      .then((d) => {
-        if (active) setMeta(d)
+      .then((data) => {
+        if (active) setMeta(data)
       })
-      .catch((e) => {
-        if (active) setLoadError(e.message || 'Could not load worksheet options')
+      .catch((err) => {
+        if (active) {
+          setLoadError(
+            err.message || 'Could not load worksheet options',
+          )
+        }
       })
+
     return () => {
       active = false
     }
   }, [])
 
   const topicsForSkill = useMemo(
-    () => (meta?.topics || []).filter((t) => t.skill === skill),
+    () =>
+      (meta?.topics || []).filter(
+        (item) => item.skill === skill,
+      ),
     [meta, skill],
   )
 
-  // keep the selected topic valid whenever the skill changes
   useEffect(() => {
-    if (topicsForSkill.length && !topicsForSkill.some((t) => t.topic === topic)) {
+    if (
+      topicsForSkill.length &&
+      !topicsForSkill.some(
+        (item) => item.topic === topic,
+      )
+    ) {
       setTopic(topicsForSkill[0].topic)
     }
   }, [topicsForSkill, topic])
 
-  const topicLabel = useMemo(() => {
-    const t = topicsForSkill.find((x) => x.topic === topic)
-    return t ? `${t.label_hindi} · ${t.label_english}` : topic
-  }, [topicsForSkill, topic])
-
   async function onGenerate(e) {
     e.preventDefault()
+
     setGenerating(true)
     setError('')
     setResult(null)
+
     try {
-      const data = await apiPost('/api/worksheets/generate', {
-        grade,
-        skill,
-        topic,
-        count,
-      })
+      const data = await apiPost(
+        '/api/worksheets/generate',
+        {
+          grade,
+          skill,
+          topic,
+          count,
+        },
+      )
+
       setResult(data)
     } catch (err) {
-      setError(err.message || 'Worksheet generation failed')
+      setError(
+        err.message || 'Worksheet generation failed',
+      )
     } finally {
       setGenerating(false)
     }
@@ -65,8 +81,11 @@ export default function Worksheets() {
 
   function printWorksheet() {
     if (!result) return
-    const frame = document.getElementById('ws-print-frame')
-    if (frame && frame.contentWindow) {
+
+    const frame =
+      document.getElementById('ws-print-frame')
+
+    if (frame?.contentWindow) {
       frame.contentWindow.focus()
       frame.contentWindow.print()
     }
@@ -75,155 +94,360 @@ export default function Worksheets() {
   const typeLegend = meta?.type_legend || {}
 
   return (
-    <div>
-      <h1>Worksheet Generator</h1>
-      <p className="hindi subtitle">द्विभाषी वर्कशीट जनरेटर</p>
-      <p className="muted">
-        Printable bilingual worksheets built from the lesson bank and flashcards
-        — fully offline, deterministic (same options give the same sheet). A
-        teacher answer key is included on the second page.
-      </p>
+    <div className="eng-worksheets-page">
+      <header className="eng-page-head">
+        <p className="eyebrow">
+          ENGOROR TEACHER TOOL
+        </p>
+
+        <h1>Worksheet Generator</h1>
+
+        <p>
+          Create printable bilingual classroom worksheets
+          for foundational literacy and numeracy.
+        </p>
+      </header>
+
+      <section className="eng-ws-summary">
+        <div>
+          <strong>Class 1–3</strong>
+          <span>Primary learning</span>
+        </div>
+
+        <div>
+          <strong>Literacy + Numeracy</strong>
+          <span>FLN focused</span>
+        </div>
+
+        <div>
+          <strong>Printable</strong>
+          <span>Worksheet + answer key</span>
+        </div>
+      </section>
 
       {loadError && (
-        <div className="error-banner" role="alert">
-          <strong>Could not load worksheet options.</strong> {loadError}
+        <div
+          className="eng-friendly-error"
+          role="alert"
+        >
+          <strong>
+            Worksheet options could not be loaded.
+          </strong>
+          <span>{loadError}</span>
         </div>
       )}
 
-      <form className="card worksheet-form" onSubmit={onGenerate}>
-        <h2>Choose the worksheet</h2>
+      <form
+        className="eng-ws-builder"
+        onSubmit={onGenerate}
+      >
+        <div className="eng-ws-builder-head">
+          <div>
+            <p className="eng-result-label">
+              WORKSHEET SETUP
+            </p>
 
-        <h2 style={{ fontSize: 15 }}>Class / कक्षा</h2>
-        <div className="radio-row" role="group" aria-label="Class level">
-          {[1, 2, 3].map((g) => (
+            <h2>Build a worksheet</h2>
+          </div>
+
+          <span className="eng-local-badge">
+            ● Generated locally
+          </span>
+        </div>
+
+        <div className="eng-ws-section">
+          <div className="eng-ws-step">
+            <span>1</span>
+
+            <div>
+              <strong>Choose class</strong>
+              <p>Select the student grade level.</p>
+            </div>
+          </div>
+
+          <div className="eng-filter-row">
+            {[1, 2, 3].map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`eng-filter-chip ${
+                  grade === item ? 'active' : ''
+                }`}
+                onClick={() => setGrade(item)}
+                aria-pressed={grade === item}
+              >
+                Class {item}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="eng-ws-section">
+          <div className="eng-ws-step">
+            <span>2</span>
+
+            <div>
+              <strong>Choose skill</strong>
+              <p>
+                Select literacy or numeracy.
+              </p>
+            </div>
+          </div>
+
+          <div className="eng-filter-row">
             <button
-              key={g}
               type="button"
-              className={`chip${grade === g ? ' active' : ''}`}
-              onClick={() => setGrade(g)}
-              aria-pressed={grade === g}
+              className={`eng-filter-chip ${
+                skill === 'literacy'
+                  ? 'active'
+                  : ''
+              }`}
+              onClick={() => {
+                setSkill('literacy')
+                setResult(null)
+              }}
             >
-              Class {g}
+              साक्षरता · Literacy
             </button>
-          ))}
-        </div>
 
-        <h2 style={{ fontSize: 15 }}>Skill / कौशल</h2>
-        <div className="radio-row" role="group" aria-label="Skill">
-          <button
-            type="button"
-            className={`chip${skill === 'literacy' ? ' active' : ''}`}
-            onClick={() => setSkill('literacy')}
-            aria-pressed={skill === 'literacy'}
-          >
-            साक्षरता · Literacy
-          </button>
-          <button
-            type="button"
-            className={`chip${skill === 'numeracy' ? ' active' : ''}`}
-            onClick={() => setSkill('numeracy')}
-            aria-pressed={skill === 'numeracy'}
-          >
-            गणित · Numeracy
-          </button>
-        </div>
-
-        <h2 style={{ fontSize: 15 }}>Topic / विषय</h2>
-        <select
-          className="worksheet-select"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          aria-label="Worksheet topic"
-        >
-          {topicsForSkill.map((t) => (
-            <option key={t.topic} value={t.topic}>
-              {t.label_hindi} · {t.label_english}
-            </option>
-          ))}
-        </select>
-
-        <h2 style={{ fontSize: 15 }}>Questions / प्रश्न</h2>
-        <div className="radio-row" role="group" aria-label="Number of questions">
-          {[5, 10].map((n) => (
             <button
-              key={n}
               type="button"
-              className={`chip${count === n ? ' active' : ''}`}
-              onClick={() => setCount(n)}
-              aria-pressed={count === n}
+              className={`eng-filter-chip ${
+                skill === 'numeracy'
+                  ? 'active'
+                  : ''
+              }`}
+              onClick={() => {
+                setSkill('numeracy')
+                setResult(null)
+              }}
             >
-              {n} questions
+              गणित · Numeracy
             </button>
-          ))}
+          </div>
         </div>
 
-        <div style={{ marginTop: 8 }}>
-          <button type="submit" className="btn btn-primary" disabled={generating || !topic}>
-            {generating ? 'Generating…' : 'Generate Worksheet'}
-          </button>
+        <div className="eng-ws-section">
+          <div className="eng-ws-step">
+            <span>3</span>
+
+            <div>
+              <strong>Choose topic</strong>
+              <p>
+                Pick the lesson topic for this sheet.
+              </p>
+            </div>
+          </div>
+
+          <select
+            className="eng-ws-select"
+            value={topic}
+            onChange={(e) =>
+              setTopic(e.target.value)
+            }
+            aria-label="Worksheet topic"
+          >
+            {topicsForSkill.map((item) => (
+              <option
+                key={item.topic}
+                value={item.topic}
+              >
+                {item.label_hindi} ·{' '}
+                {item.label_english}
+              </option>
+            ))}
+          </select>
         </div>
+
+        <div className="eng-ws-section">
+          <div className="eng-ws-step">
+            <span>4</span>
+
+            <div>
+              <strong>
+                Number of questions
+              </strong>
+              <p>
+                Choose the worksheet length.
+              </p>
+            </div>
+          </div>
+
+          <div className="eng-filter-row">
+            {[5, 10].map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`eng-filter-chip ${
+                  count === item ? 'active' : ''
+                }`}
+                onClick={() => setCount(item)}
+              >
+                {item} questions
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="eng-ws-generate-area">
+          <button
+            type="submit"
+            className="eng-ws-generate-button"
+            disabled={generating || !topic}
+          >
+            {generating
+              ? 'Generating worksheet...'
+              : 'Generate Worksheet'}
+          </button>
+
+          <span>
+            Bilingual output depends on available
+            Santali translations.
+          </span>
+        </div>
+
+        {generating && (
+          <div className="eng-processing">
+            <span className="eng-spinner" />
+
+            <div>
+              <strong>
+                Preparing your worksheet...
+              </strong>
+
+              <p>
+                Engoror is creating the printable
+                classroom material locally.
+              </p>
+            </div>
+          </div>
+        )}
       </form>
 
       {error && (
-        <div className="error-banner" role="alert">
-          <strong>Generation failed.</strong> {error}
+        <div
+          className="eng-friendly-error"
+          role="alert"
+        >
+          <strong>
+            Worksheet could not be generated.
+          </strong>
+          <span>{error}</span>
         </div>
       )}
 
       {result && (
-        <section className="ws-result" aria-label="Worksheet ready">
-          <h3>
-            Worksheet ready — Class {result.grade} · {result.topic_label}
-          </h3>
-          <p className="status-detail" style={{ marginBottom: 6 }}>
-            {result.question_count} questions · types:{' '}
-            {result.types_included.map((t) => typeLegend[t] || t).join(', ')} ·{' '}
-            {result.offline ? 'generated offline' : ''}
-          </p>
+        <section
+          className="eng-ws-result"
+          aria-label="Worksheet ready"
+        >
+          <div className="eng-ws-result-head">
+            <div>
+              <p className="eng-result-label">
+                WORKSHEET READY
+              </p>
+
+              <h2>
+                Class {result.grade} ·{' '}
+                {result.topic_label}
+              </h2>
+
+              <p>
+                {result.question_count} questions
+                {result.types_included?.length
+                  ? ` · ${result.types_included
+                      .map(
+                        (item) =>
+                          typeLegend[item] || item,
+                      )
+                      .join(', ')}`
+                  : ''}
+              </p>
+            </div>
+
+            <span className="eng-success-pill">
+              ✓ Ready to print
+            </span>
+          </div>
+
+          <div className="eng-ws-result-info">
+            <div>
+              <strong>
+                {result.question_count}
+              </strong>
+              <span>Questions</span>
+            </div>
+
+            <div>
+              <strong>
+                {result.santali_available
+                  ? 'Bilingual'
+                  : 'Hindi'}
+              </strong>
+              <span>Worksheet language</span>
+            </div>
+
+            <div>
+              <strong>
+                {result.offline
+                  ? 'Local'
+                  : 'Generated'}
+              </strong>
+              <span>Generation mode</span>
+            </div>
+          </div>
+
           {!result.santali_available && (
-            <p className="placeholder-block" style={{ margin: '6px 0 10px' }}>
-              This sheet is Hindi-only right now: the Santali translation model
-              is not ready on this device. Generate translations first (see FLN
-              Lessons / Model Status), then regenerate the worksheet to get the
-              bilingual version.
-            </p>
+            <div className="eng-ws-warning">
+              Santali text is not available for all
+              items in this worksheet. The Hindi
+              worksheet can still be used.
+            </div>
           )}
+
           {result.validation_notice && (
-            <p>
-              <span className="badge" style={{ marginBottom: 6 }}>
-                {result.validation_notice}
-              </span>
-            </p>
+            <span className="eng-validation">
+              {result.validation_notice}
+            </span>
           )}
-          <div className="action-row">
+
+          <div className="eng-ws-actions">
             <a
-              className="btn-small primary"
+              className="eng-ws-primary-action"
               href={result.html_url}
               target="_blank"
               rel="noreferrer"
             >
-              Preview (new tab)
+              Preview Worksheet
             </a>
-            <button type="button" className="btn-small" onClick={printWorksheet}>
-              🖨️ Print
+
+            <button
+              type="button"
+              className="eng-ws-secondary-action"
+              onClick={printWorksheet}
+            >
+              Print Worksheet
             </button>
-            <a className="btn-small" href={result.download_url}>
-              ⬇ Download HTML
+
+            <a
+              className="eng-ws-secondary-action"
+              href={result.download_url}
+            >
+              Download HTML
             </a>
           </div>
-          <p className="muted" style={{ fontSize: 12.5 }}>
-            Tip: Print → “Save as PDF” gives a PDF with correct Devanagari and
-            Ol Chiki text (no extra software needed).
+
+          <p className="eng-ws-tip">
+            Tip: In the print window choose
+            “Save as PDF” to create a PDF copy.
           </p>
+
           <iframe
             id="ws-print-frame"
-            title="Worksheet preview"
-            className="ws-frame"
             src={result.html_url}
+            title="Worksheet print frame"
+            className="eng-ws-print-frame"
           />
-          <p className="muted" style={{ fontSize: 12 }}>
-            {result.nipun_note}
-          </p>
         </section>
       )}
     </div>

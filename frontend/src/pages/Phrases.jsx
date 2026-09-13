@@ -2,25 +2,30 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiGet, apiPost } from '../services/api'
 import { formatMs } from '../utils/format'
 
-const VALIDATION_NOTICE = 'AI-generated — Requires native-speaker validation'
+const VALIDATION_NOTICE =
+  'AI-generated — Requires native-speaker validation'
 
 export default function Phrases() {
   const [data, setData] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [category, setCategory] = useState('')
-  const [busy, setBusy] = useState({}) // { [phraseId]: 'translate' | 'audio' }
+  const [busy, setBusy] = useState({})
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
     let active = true
+
     apiGet('/api/phrases')
-      .then((d) => {
-        if (active) setData(d)
+      .then((response) => {
+        if (active) setData(response)
       })
-      .catch((e) => {
-        if (active) setLoadError(e.message || 'Could not load phrases')
+      .catch((err) => {
+        if (active) {
+          setLoadError(err.message || 'Could not load phrases')
+        }
       })
+
     return () => {
       active = false
     }
@@ -28,22 +33,35 @@ export default function Phrases() {
 
   const visible = useMemo(() => {
     const rows = data?.phrases || []
-    return rows.filter((p) => !category || p.category === category)
+
+    return rows.filter(
+      (phrase) =>
+        !category || phrase.category === category,
+    )
   }, [data, category])
 
+  const hasSantali = (phrase) =>
+    phrase.validation_status === 'AI_GENERATED'
+
   function replacePhrase(updated) {
-    setData((d) => ({
-      ...d,
-      phrases: d.phrases.map((p) => (p.id === updated.id ? updated : p)),
+    setData((current) => ({
+      ...current,
+      phrases: current.phrases.map((phrase) =>
+        phrase.id === updated.id ? updated : phrase,
+      ),
     }))
   }
 
   function setBusyFor(id, kind) {
-    setBusy((b) => ({ ...b, [id]: kind }))
+    setBusy((current) => ({
+      ...current,
+      [id]: kind,
+    }))
   }
+
   function clearBusyFor(id) {
-    setBusy((b) => {
-      const next = { ...b }
+    setBusy((current) => {
+      const next = { ...current }
       delete next[id]
       return next
     })
@@ -53,11 +71,19 @@ export default function Phrases() {
     setBusyFor(phrase.id, 'translate')
     setError('')
     setMessage('')
+
     try {
-      const resp = await apiPost(`/api/phrases/${phrase.id}/translate`, {})
-      replacePhrase(resp.phrase)
+      const response = await apiPost(
+        `/api/phrases/${phrase.id}/translate`,
+        {},
+      )
+
+      replacePhrase(response.phrase)
+
       setMessage(
-        `Santali generated in ${formatMs(resp.translation_latency_ms)} (offline model). ${VALIDATION_NOTICE}.`,
+        `Santali generated locally in ${formatMs(
+          response.translation_latency_ms,
+        )}.`,
       )
     } catch (err) {
       setError(err.message || 'Translation failed')
@@ -70,129 +96,242 @@ export default function Phrases() {
     setBusyFor(phrase.id, 'audio')
     setError('')
     setMessage('')
+
     try {
-      const resp = await apiPost(`/api/phrases/${phrase.id}/audio`, {})
-      const player = new Audio(resp.audio_url)
+      const response = await apiPost(
+        `/api/phrases/${phrase.id}/audio`,
+        {},
+      )
+
+      const player = new Audio(response.audio_url)
       await player.play()
+
       setMessage(
-        resp.cached
-          ? 'Playing cached Santali audio.'
-          : `Audio generated in ${formatMs(resp.latency_ms)} (offline TTS).`,
+        response.cached
+          ? 'Playing saved Santali audio.'
+          : `Santali audio generated in ${formatMs(
+              response.latency_ms,
+            )}.`,
       )
     } catch (err) {
-      setError(err.message || 'Audio failed')
+      setError(err.message || 'Audio could not be played')
     } finally {
       clearBusyFor(phrase.id)
     }
   }
 
-  const hasSantali = (p) => p.validation_status === 'AI_GENERATED'
-
   return (
-    <div>
-      <h1>Classroom Phrase Pack</h1>
-      <p className="hindi subtitle">कक्षा वाक्यांश संग्रह</p>
-      <p className="muted">
-        Everyday classroom instructions in Hindi and Santali (Ol Chiki) with
-        audio. Hindi phrase → offline IndicTrans2 → Santali text → offline TTS →
-        student hears it. No internet needed once the models are downloaded.
-      </p>
+    <div className="eng-phrases-page">
+      <header className="eng-page-head">
+        <p className="eyebrow">ENGOROR CLASSROOM TOOL</p>
+
+        <h1>Classroom Phrase Pack</h1>
+
+        <p>
+          Everyday Hindi classroom instructions translated into
+          Santali in Ol Chiki, with locally generated student audio.
+        </p>
+      </header>
+
+      <section className="eng-phrase-summary">
+        <div>
+          <strong>{data?.phrases?.length || 0}</strong>
+          <span>Classroom phrases</span>
+        </div>
+
+        <div>
+          <strong>Hindi → Santali</strong>
+          <span>Local translation</span>
+        </div>
+
+        <div>
+          <strong>Audio</strong>
+          <span>Offline Santali speech</span>
+        </div>
+      </section>
 
       {data?.categories?.length > 0 && (
-        <div className="chip-row" role="group" aria-label="Filter by category">
-          <button
-            type="button"
-            className={`chip${category === '' ? ' active' : ''}`}
-            onClick={() => setCategory('')}
-          >
-            All
-          </button>
-          {data.categories.map((c) => (
+        <section className="eng-phrase-filter">
+          <p className="eng-result-label">
+            FILTER BY CATEGORY
+          </p>
+
+          <div className="eng-filter-row">
             <button
-              key={c}
               type="button"
-              className={`chip${category === c ? ' active' : ''}`}
-              onClick={() => setCategory(c)}
+              className={`eng-filter-chip ${
+                category === '' ? 'active' : ''
+              }`}
+              onClick={() => setCategory('')}
             >
-              {c}
+              All phrases
             </button>
-          ))}
-        </div>
+
+            {data.categories.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={`eng-filter-chip ${
+                  category === item ? 'active' : ''
+                }`}
+                onClick={() => setCategory(item)}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {loadError && (
-        <div className="error-banner" role="alert">
-          <strong>Could not load phrases.</strong> {loadError}
+        <div className="eng-friendly-error" role="alert">
+          <strong>Phrase pack could not be loaded.</strong>
+          <span>{loadError}</span>
         </div>
       )}
 
-      {!data && !loadError && <p className="muted">Loading phrase pack…</p>}
-
-      {data && (
-        <div className="content-grid">
-          {visible.map((p) => (
-            <article key={p.id} className="card" style={{ margin: 0 }}>
-              <p className="hindi" style={{ fontSize: 18, fontWeight: 700, marginBottom: 2 }}>
-                {p.hindi_text}
-              </p>
-              <p className="muted" style={{ fontSize: 13 }}>
-                {p.english} · <span className="mini-chip">{p.category}</span>
-              </p>
-
-              {hasSantali(p) ? (
-                <div className="text-block santali-block ol-chiki" style={{ margin: '8px 0' }}>
-                  {p.santali_ol_chiki}
-                </div>
-              ) : (
-                <div className="placeholder-block" style={{ margin: '8px 0' }}>
-                  Santali not generated yet — tap “Generate Santali” below.
-                </div>
-              )}
-
-              <div className="action-row">
-                {!hasSantali(p) && (
-                  <button
-                    type="button"
-                    className="btn-small primary"
-                    disabled={busy[p.id] === 'translate'}
-                    onClick={() => onTranslate(p)}
-                  >
-                    {busy[p.id] === 'translate' ? 'Translating…' : 'Generate Santali'}
-                  </button>
-                )}
-                {hasSantali(p) && (
-                  <button
-                    type="button"
-                    className="btn-audio"
-                    disabled={busy[p.id] === 'audio'}
-                    onClick={() => onPlay(p)}
-                  >
-                    ▶ {busy[p.id] === 'audio' ? 'Generating…' : 'Play Santali Audio'}
-                  </button>
-                )}
-              </div>
-            </article>
-          ))}
+      {!data && !loadError && (
+        <div className="eng-learning-loading">
+          Loading classroom phrases...
         </div>
       )}
 
       {data && (
-        <p className="status-detail">
-          {visible.length} phrase(s) · Santali text and audio:{' '}
-          {VALIDATION_NOTICE}.
-        </p>
+        <>
+          <div className="eng-phrases-heading">
+            <div>
+              <p className="eng-result-label">
+                CLASSROOM PHRASES
+              </p>
+
+              <h2>Ready for the teacher</h2>
+            </div>
+
+            <span>{visible.length} phrases</span>
+          </div>
+
+          <div className="eng-phrase-grid">
+            {visible.map((phrase) => (
+              <article
+                key={phrase.id}
+                className="eng-phrase-card"
+              >
+                <div className="eng-phrase-card-head">
+                  <span>
+                    {phrase.category || 'Classroom'}
+                  </span>
+
+                  {hasSantali(phrase) && (
+                    <span className="eng-ready-small">
+                      Santali ready
+                    </span>
+                  )}
+                </div>
+
+                <div className="eng-phrase-hindi">
+                  <p className="eng-result-label">
+                    HINDI — TEACHER
+                  </p>
+
+                  <h3 className="hindi">
+                    {phrase.hindi_text}
+                  </h3>
+
+                  {phrase.english && (
+                    <p className="eng-phrase-english">
+                      {phrase.english}
+                    </p>
+                  )}
+                </div>
+
+                <div className="eng-phrase-santali">
+                  <p className="eng-result-label">
+                    SANTALI — STUDENT
+                  </p>
+
+                  {hasSantali(phrase) ? (
+                    <div className="ol-chiki">
+                      {phrase.santali_ol_chiki}
+                    </div>
+                  ) : (
+                    <p className="eng-phrase-placeholder">
+                      Generate the Santali translation for this
+                      classroom phrase.
+                    </p>
+                  )}
+                </div>
+
+                <div className="eng-phrase-actions">
+                  {!hasSantali(phrase) && (
+                    <button
+                      type="button"
+                      className="eng-translate-button"
+                      disabled={
+                        busy[phrase.id] === 'translate'
+                      }
+                      onClick={() =>
+                        onTranslate(phrase)
+                      }
+                    >
+                      {busy[phrase.id] === 'translate'
+                        ? 'Translating...'
+                        : 'Generate Santali'}
+                    </button>
+                  )}
+
+                  {hasSantali(phrase) && (
+                    <button
+                      type="button"
+                      className="eng-audio-button"
+                      disabled={
+                        busy[phrase.id] === 'audio'
+                      }
+                      onClick={() => onPlay(phrase)}
+                    >
+                      {busy[phrase.id] === 'audio'
+                        ? 'Generating audio...'
+                        : '▶ Play Santali Audio'}
+                    </button>
+                  )}
+                </div>
+
+                {hasSantali(phrase) && (
+                  <span className="eng-validation">
+                    {VALIDATION_NOTICE}
+                  </span>
+                )}
+              </article>
+            ))}
+          </div>
+        </>
       )}
 
       {message && (
-        <p className="status-detail" role="status">
-          {message}
-        </p>
-      )}
-      {error && (
-        <div className="error-banner" role="alert">
-          <strong>Action failed.</strong> {error}
+        <div className="eng-success-message" role="status">
+          ✓ {message}
         </div>
       )}
+
+      {error && (
+        <div className="eng-friendly-error" role="alert">
+          <strong>Phrase action could not be completed.</strong>
+          <span>{error}</span>
+        </div>
+      )}
+
+      <details className="eng-tech-details eng-phrase-tech">
+        <summary>How Phrase Pack works</summary>
+
+        <p>
+          Hindi classroom phrase → local translation →
+          Santali Ol Chiki text → local Santali speech.
+        </p>
+
+        <p>
+          Core inference works without a cloud API once the
+          required models are available on the device.
+        </p>
+      </details>
     </div>
   )
 }

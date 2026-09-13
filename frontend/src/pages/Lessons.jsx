@@ -2,14 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { apiGet, apiPost } from '../services/api'
 import { formatMs } from '../utils/format'
 
-const VALIDATION_NOTICE = 'AI-generated — Requires native-speaker validation'
+const VALIDATION_NOTICE =
+  'AI-generated — Requires native-speaker validation'
+
 const NIPUN_NOTE =
   'Designed around foundational literacy and numeracy skills relevant to NIPUN Bharat goals.'
 
 const SKILL_FILTERS = [
-  { value: '', label_hindi: 'सभी', label: 'All skills' },
-  { value: 'literacy', label_hindi: 'साक्षरता', label: 'Literacy' },
-  { value: 'numeracy', label_hindi: 'गणित', label: 'Numeracy' },
+  { value: '', hindi: 'सभी', label: 'All skills' },
+  { value: 'literacy', hindi: 'साक्षरता', label: 'Literacy' },
+  { value: 'numeracy', hindi: 'गणित', label: 'Numeracy' },
 ]
 
 export default function Lessons() {
@@ -18,19 +20,26 @@ export default function Lessons() {
   const [skill, setSkill] = useState('')
   const [category, setCategory] = useState('')
   const [selectedId, setSelectedId] = useState(null)
-  const [busy, setBusy] = useState({}) // { [lessonId]: 'translate' | 'audio' }
+
+  const [busy, setBusy] = useState({})
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
     let active = true
+
     apiGet('/api/fln/lessons')
-      .then((d) => {
-        if (active) setLessons(d.lessons || [])
+      .then((data) => {
+        if (active) {
+          setLessons(data.lessons || [])
+        }
       })
-      .catch((e) => {
-        if (active) setLoadError(e.message || 'Could not load lessons')
+      .catch((err) => {
+        if (active) {
+          setLoadError(err.message || 'Could not load lessons')
+        }
       })
+
     return () => {
       active = false
     }
@@ -38,45 +47,72 @@ export default function Lessons() {
 
   const categories = useMemo(() => {
     if (!lessons) return []
+
     const seen = new Map()
-    for (const l of lessons) {
-      if (l.category && !seen.has(l.category)) {
-        seen.set(l.category, l.title_english)
+
+    for (const lesson of lessons) {
+      if (lesson.category && !seen.has(lesson.category)) {
+        seen.set(lesson.category, lesson.title_english)
       }
     }
-    return [...seen.entries()].map(([value, label]) => ({ value, label }))
+
+    return [...seen.entries()].map(([value, label]) => ({
+      value,
+      label,
+    }))
   }, [lessons])
 
   const visible = useMemo(
     () =>
       (lessons || []).filter(
-        (l) =>
-          (!skill || l.subject === skill) && (!category || l.category === category),
+        (lesson) =>
+          (!skill || lesson.subject === skill) &&
+          (!category || lesson.category === category),
       ),
     [lessons, skill, category],
   )
 
-  const selected = visible.find((l) => l.id === selectedId) || null
+  const selected =
+    visible.find((lesson) => lesson.id === selectedId) || null
+
+  const hasSantali = (lesson) =>
+    lesson.validation_status === 'AI_GENERATED'
 
   function replaceLesson(updated) {
-    setLessons((rows) => rows.map((r) => (r.id === updated.id ? updated : r)))
+    setLessons((rows) =>
+      rows.map((row) =>
+        row.id === updated.id ? updated : row,
+      ),
+    )
   }
 
   async function onTranslate(lesson) {
-    setBusy((b) => ({ ...b, [lesson.id]: 'translate' }))
+    setBusy((current) => ({
+      ...current,
+      [lesson.id]: 'translate',
+    }))
+
     setError('')
     setMessage('')
+
     try {
-      const data = await apiPost(`/api/fln/lessons/${lesson.id}/translate`, {})
+      const data = await apiPost(
+        `/api/fln/lessons/${lesson.id}/translate`,
+        {},
+      )
+
       replaceLesson(data.lesson)
+
       setMessage(
-        `Santali generated in ${formatMs(data.translation_latency_ms)} (offline model). ${VALIDATION_NOTICE}.`,
+        `Santali generated locally in ${formatMs(
+          data.translation_latency_ms,
+        )}.`,
       )
     } catch (err) {
       setError(err.message || 'Translation failed')
     } finally {
-      setBusy((b) => {
-        const next = { ...b }
+      setBusy((current) => {
+        const next = { ...current }
         delete next[lesson.id]
         return next
       })
@@ -84,112 +120,198 @@ export default function Lessons() {
   }
 
   async function onPlayAudio(lesson) {
-    setBusy((b) => ({ ...b, [lesson.id]: 'audio' }))
+    setBusy((current) => ({
+      ...current,
+      [lesson.id]: 'audio',
+    }))
+
     setError('')
     setMessage('')
+
     try {
-      const data = await apiPost(`/api/fln/lessons/${lesson.id}/audio`, {})
+      const data = await apiPost(
+        `/api/fln/lessons/${lesson.id}/audio`,
+        {},
+      )
+
       const player = new Audio(data.audio_url)
       await player.play()
+
       setMessage(
         data.cached
-          ? 'Playing cached Santali audio.'
-          : `Audio generated in ${formatMs(data.latency_ms)}.`,
+          ? 'Playing saved Santali audio.'
+          : `Santali audio generated in ${formatMs(
+              data.latency_ms,
+            )}.`,
       )
     } catch (err) {
-      setError(err.message || 'Audio failed')
+      setError(err.message || 'Audio could not be played')
     } finally {
-      setBusy((b) => {
-        const next = { ...b }
+      setBusy((current) => {
+        const next = { ...current }
         delete next[lesson.id]
         return next
       })
     }
   }
 
-  const hasSantali = (l) => l.validation_status === 'AI_GENERATED'
-
   return (
-    <div>
-      <h1>FLN Lessons</h1>
-      <p className="hindi subtitle">बुनियादी साक्षरता और गणित पाठ</p>
-      <p className="muted">
-        Foundational literacy &amp; numeracy lesson bank (Hindi + Santali Ol Chiki).
-        Works fully offline. {NIPUN_NOTE}
-      </p>
+    <div className="eng-lessons-page">
+      <header className="eng-page-head">
+        <p className="eyebrow">ENGOROR LEARNING HUB</p>
 
-      {/* Skill filter */}
-      <div className="chip-row" role="group" aria-label="Filter by skill">
-        {SKILL_FILTERS.map((f) => (
-          <button
-            key={f.value}
-            type="button"
-            className={`chip${skill === f.value ? ' active' : ''}`}
-            onClick={() => {
-              setSkill(f.value)
-              setSelectedId(null)
-            }}
-          >
-            {f.label_hindi} · {f.label}
-          </button>
-        ))}
-      </div>
+        <h1>Foundational Learning</h1>
 
-      {/* Category filter */}
-      {categories.length > 0 && (
-        <div className="chip-row" role="group" aria-label="Filter by topic">
-          <button
-            type="button"
-            className={`chip${category === '' ? ' active' : ''}`}
-            onClick={() => setCategory('')}
-          >
-            All topics
-          </button>
-          {categories.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              className={`chip${category === c.value ? ' active' : ''}`}
-              onClick={() => setCategory(c.value)}
-            >
-              {c.label}
-            </button>
-          ))}
+        <p>
+          Simple bilingual classroom lessons for literacy and numeracy,
+          designed for Hindi-speaking teachers and Santali-speaking children.
+        </p>
+      </header>
+
+      <section className="eng-learning-summary">
+        <div>
+          <strong>{lessons?.length || 0}</strong>
+          <span>Offline lessons</span>
         </div>
-      )}
+
+        <div>
+          <strong>Hindi + Santali</strong>
+          <span>Bilingual learning</span>
+        </div>
+
+        <div>
+          <strong>FLN</strong>
+          <span>Literacy & numeracy</span>
+        </div>
+      </section>
+
+      <section className="eng-filter-panel">
+        <div>
+          <p className="eng-result-label">LEARNING SKILL</p>
+
+          <div className="eng-filter-row">
+            {SKILL_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                type="button"
+                className={`eng-filter-chip ${
+                  skill === filter.value ? 'active' : ''
+                }`}
+                onClick={() => {
+                  setSkill(filter.value)
+                  setSelectedId(null)
+                }}
+              >
+                <span className="hindi">{filter.hindi}</span>
+                <span>{filter.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {categories.length > 0 && (
+          <div className="eng-topic-filter">
+            <p className="eng-result-label">TOPIC</p>
+
+            <div className="eng-filter-row">
+              <button
+                type="button"
+                className={`eng-filter-chip ${
+                  category === '' ? 'active' : ''
+                }`}
+                onClick={() => {
+                  setCategory('')
+                  setSelectedId(null)
+                }}
+              >
+                All topics
+              </button>
+
+              {categories.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`eng-filter-chip ${
+                    category === item.value ? 'active' : ''
+                  }`}
+                  onClick={() => {
+                    setCategory(item.value)
+                    setSelectedId(null)
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {loadError && (
-        <div className="error-banner" role="alert">
-          <strong>Could not load lessons.</strong> {loadError}
+        <div className="eng-friendly-error" role="alert">
+          <strong>Lessons could not be loaded.</strong>
+          <span>{loadError}</span>
         </div>
       )}
 
-      {!lessons && !loadError && <p className="muted">Loading lessons…</p>}
+      {!lessons && !loadError && (
+        <div className="eng-learning-loading">
+          Loading classroom lessons...
+        </div>
+      )}
 
       {lessons && (
         <>
-          <p className="muted" style={{ fontSize: 13 }}>
-            {visible.length} lesson(s)
-          </p>
-          <div className="content-grid">
-            {visible.map((l) => (
+          <div className="eng-lessons-heading">
+            <div>
+              <p className="eng-result-label">LESSON BANK</p>
+              <h2>Choose a lesson</h2>
+            </div>
+
+            <span>{visible.length} lessons available</span>
+          </div>
+
+          <div className="eng-lessons-grid">
+            {visible.map((lesson) => (
               <button
-                key={l.id}
+                key={lesson.id}
                 type="button"
-                className={`content-card${selectedId === l.id ? ' selected' : ''}`}
-                onClick={() => setSelectedId(selectedId === l.id ? null : l.id)}
-                aria-pressed={selectedId === l.id}
+                className={`eng-lesson-card ${
+                  selectedId === lesson.id ? 'selected' : ''
+                }`}
+                onClick={() =>
+                  setSelectedId(
+                    selectedId === lesson.id
+                      ? null
+                      : lesson.id,
+                  )
+                }
               >
-                <h3 className="hindi">{l.title_hindi}</h3>
-                <p className="card-sub">{l.title_english}</p>
-                <div className="card-meta">
-                  <span className="mini-chip">Class {l.grade_level}</span>
-                  <span className="mini-chip">{l.subject}</span>
-                  {hasSantali(l) ? (
-                    <span className="mini-chip">Santali ready</span>
-                  ) : (
-                    <span className="mini-chip warm">Needs translation</span>
-                  )}
+                <div className="eng-lesson-card-top">
+                  <span>Class {lesson.grade_level}</span>
+
+                  <span
+                    className={
+                      hasSantali(lesson)
+                        ? 'eng-ready-small'
+                        : 'eng-wait-small'
+                    }
+                  >
+                    {hasSantali(lesson)
+                      ? 'Santali ready'
+                      : 'Translation needed'}
+                  </span>
+                </div>
+
+                <h3 className="hindi">
+                  {lesson.title_hindi}
+                </h3>
+
+                <p>{lesson.title_english}</p>
+
+                <div className="eng-lesson-meta">
+                  <span>{lesson.subject}</span>
+                  <span>{lesson.category}</span>
                 </div>
               </button>
             ))}
@@ -197,84 +319,140 @@ export default function Lessons() {
         </>
       )}
 
-      {/* Detail */}
       {selected && (
-        <section className="card" aria-label="Lesson detail">
-          <h2 className="hindi">{selected.title_hindi}</h2>
-          <p className="muted" style={{ marginTop: -6 }}>
-            {selected.title_english} · Class {selected.grade_level} ·{' '}
-            {selected.skill || selected.subject}
-          </p>
+        <section className="eng-lesson-detail">
+          <div className="eng-lesson-detail-head">
+            <div>
+              <p className="eng-result-label">
+                SELECTED LESSON
+              </p>
 
-          <h2 style={{ fontSize: 16 }}>Learning objective</h2>
-          <p style={{ marginBottom: 10 }}>{selected.learning_objective}</p>
+              <h2 className="hindi">
+                {selected.title_hindi}
+              </h2>
 
-          <h2 style={{ fontSize: 16 }}>Activity (for the teacher)</h2>
-          <p className="hindi" style={{ marginBottom: 10 }}>
-            {selected.activity_instruction}
-          </p>
-
-          <h2 style={{ fontSize: 16 }}>Hindi text</h2>
-          <div className="text-block hindi-block hindi">{selected.hindi_text}</div>
-
-          <h2 style={{ fontSize: 16 }}>Santali — Ol Chiki</h2>
-          {hasSantali(selected) ? (
-            <div className="text-block santali-block ol-chiki">
-              {selected.santali_ol_chiki}
+              <p>
+                {selected.title_english} · Class{' '}
+                {selected.grade_level} ·{' '}
+                {selected.skill || selected.subject}
+              </p>
             </div>
-          ) : (
-            <div className="placeholder-block">
-              Santali translation not generated yet for this lesson. It will be
-              produced on this device by the offline IndicTrans2 model — no
-              internet needed.
-            </div>
-          )}
 
-          <div className="action-row">
+            <span className="eng-local-badge">
+              ● Works offline
+            </span>
+          </div>
+
+          <div className="eng-lesson-info-grid">
+            <div>
+              <p className="eng-result-label">
+                LEARNING OBJECTIVE
+              </p>
+
+              <p>{selected.learning_objective}</p>
+            </div>
+
+            <div>
+              <p className="eng-result-label">
+                TEACHER ACTIVITY
+              </p>
+
+              <p className="hindi">
+                {selected.activity_instruction}
+              </p>
+            </div>
+          </div>
+
+          <div className="eng-lesson-language-grid">
+            <div className="eng-lesson-language-card">
+              <p className="eng-result-label">
+                HINDI — TEACHER
+              </p>
+
+              <div className="hindi eng-lesson-hindi">
+                {selected.hindi_text}
+              </div>
+            </div>
+
+            <div className="eng-lesson-language-card santali">
+              <p className="eng-result-label">
+                SANTALI — STUDENT
+              </p>
+
+              {hasSantali(selected) ? (
+                <div className="ol-chiki eng-lesson-santali">
+                  {selected.santali_ol_chiki}
+                </div>
+              ) : (
+                <div className="eng-lesson-placeholder">
+                  Santali translation has not been generated for
+                  this lesson yet.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="eng-lesson-actions">
             {!hasSantali(selected) && (
               <button
                 type="button"
-                className="btn-small primary"
-                disabled={busy[selected.id] === 'translate'}
+                className="eng-translate-button"
+                disabled={
+                  busy[selected.id] === 'translate'
+                }
                 onClick={() => onTranslate(selected)}
               >
                 {busy[selected.id] === 'translate'
-                  ? 'Translating…'
-                  : 'Generate Santali Translation'}
+                  ? 'Translating...'
+                  : 'Generate Santali'}
               </button>
             )}
+
             {hasSantali(selected) && (
               <button
                 type="button"
-                className="btn-audio"
+                className="eng-audio-button"
                 disabled={busy[selected.id] === 'audio'}
                 onClick={() => onPlayAudio(selected)}
               >
-                ▶ {busy[selected.id] === 'audio' ? 'Generating audio…' : 'Play Santali Audio'}
+                {busy[selected.id] === 'audio'
+                  ? 'Generating audio...'
+                  : '▶ Play Santali Audio'}
               </button>
             )}
           </div>
 
           {hasSantali(selected) && (
-            <p>
-              <span className="badge" style={{ marginBottom: 0 }}>
-                {VALIDATION_NOTICE}
-              </span>
-            </p>
+            <span className="eng-validation">
+              {VALIDATION_NOTICE}
+            </span>
           )}
         </section>
       )}
 
       {message && (
-        <p className="status-detail" role="status" style={{ marginTop: 10 }}>
-          {message}
-        </p>
-      )}
-      {error && (
-        <div className="error-banner" role="alert">
-          <strong>Action failed.</strong> {error}
+        <div className="eng-success-message" role="status">
+          ✓ {message}
         </div>
       )}
+
+      {error && (
+        <div className="eng-friendly-error" role="alert">
+          <strong>Lesson action could not be completed.</strong>
+          <span>{error}</span>
+        </div>
+      )}
+
+      <details className="eng-tech-details eng-learning-tech">
+        <summary>About this learning content</summary>
+
+        <p>{NIPUN_NOTE}</p>
+
+        <p>
+          Lesson content is stored locally and can be used without
+          internet connectivity after setup.
+        </p>
+      </details>
     </div>
   )
 }

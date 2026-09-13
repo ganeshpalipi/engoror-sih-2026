@@ -1,25 +1,32 @@
 import { useEffect, useMemo, useState } from 'react'
 import { apiGet, apiPost } from '../services/api'
 
-const VALIDATION_NOTICE = 'AI-generated — Requires native-speaker validation'
+const VALIDATION_NOTICE =
+  'AI-generated - Requires native-speaker validation'
 
 export default function Flashcards() {
   const [data, setData] = useState(null)
   const [loadError, setLoadError] = useState('')
   const [topic, setTopic] = useState('')
-  const [busy, setBusy] = useState({}) // { [cardId]: 'translate' | 'audio' }
+  const [busy, setBusy] = useState({})
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
     let active = true
+
     apiGet('/api/flashcards')
-      .then((d) => {
-        if (active) setData(d)
+      .then((response) => {
+        if (active) setData(response)
       })
-      .catch((e) => {
-        if (active) setLoadError(e.message || 'Could not load flashcards')
+      .catch((err) => {
+        if (active) {
+          setLoadError(
+            err.message || 'Could not load flashcards',
+          )
+        }
       })
+
     return () => {
       active = false
     }
@@ -27,37 +34,49 @@ export default function Flashcards() {
 
   const visible = useMemo(() => {
     const rows = data?.flashcards || []
-    return rows.filter((c) => !topic || c.topic === topic)
+
+    return rows.filter(
+      (card) => !topic || card.topic === topic,
+    )
   }, [data, topic])
 
-  const topicInfo = useMemo(() => {
-    const map = new Map()
-    for (const t of data?.topics || []) map.set(t.topic, t)
-    return map
-  }, [data])
+  const hasSantali = (card) =>
+    card.validation_status === 'AI_GENERATED'
 
   function replaceCard(updated) {
-    setData((d) => ({
-      ...d,
-      flashcards: d.flashcards.map((c) => (c.id === updated.id ? updated : c)),
+    setData((current) => ({
+      ...current,
+      flashcards: current.flashcards.map((card) =>
+        card.id === updated.id ? updated : card,
+      ),
     }))
   }
 
   async function onTranslate(card) {
-    setBusy((b) => ({ ...b, [card.id]: 'translate' }))
+    setBusy((current) => ({
+      ...current,
+      [card.id]: 'translate',
+    }))
+
     setError('')
     setMessage('')
+
     try {
-      // Reuse the flashcard translate endpoint shape (phrase route is generic;
-      // flashcards expose the same behaviour through their own route).
-      const resp = await apiPost(`/api/flashcards/${card.id}/translate`, {})
-      replaceCard(resp.flashcard)
-      setMessage('Santali word generated (offline model).')
+      const response = await apiPost(
+        `/api/flashcards/${card.id}/translate`,
+        {},
+      )
+
+      replaceCard(response.flashcard)
+
+      setMessage(
+        `Santali word generated for "${card.english_word}".`,
+      )
     } catch (err) {
       setError(err.message || 'Translation failed')
     } finally {
-      setBusy((b) => {
-        const next = { ...b }
+      setBusy((current) => {
+        const next = { ...current }
         delete next[card.id]
         return next
       })
@@ -65,127 +84,263 @@ export default function Flashcards() {
   }
 
   async function onPlay(card) {
-    setBusy((b) => ({ ...b, [card.id]: 'audio' }))
+    setBusy((current) => ({
+      ...current,
+      [card.id]: 'audio',
+    }))
+
     setError('')
     setMessage('')
+
     try {
-      const resp = await apiPost(`/api/flashcards/${card.id}/audio`, {})
-      const player = new Audio(resp.audio_url)
+      const response = await apiPost(
+        `/api/flashcards/${card.id}/audio`,
+        {},
+      )
+
+      const player = new Audio(response.audio_url)
       await player.play()
-      setMessage(resp.cached ? 'Playing cached audio.' : 'Audio generated (offline TTS).')
+
+      setMessage(
+        response.cached
+          ? 'Playing saved Santali audio.'
+          : 'Santali audio generated locally.',
+      )
     } catch (err) {
-      setError(err.message || 'Audio failed')
+      setError(err.message || 'Audio could not be played')
     } finally {
-      setBusy((b) => {
-        const next = { ...b }
+      setBusy((current) => {
+        const next = { ...current }
         delete next[card.id]
         return next
       })
     }
   }
 
-  const hasSantali = (c) => c.validation_status === 'AI_GENERATED'
-
   return (
-    <div>
-      <h1>Flashcards</h1>
-      <p className="hindi subtitle">चित्र फ्लैशकार्ड</p>
-      <p className="muted">
-        Visual vocabulary cards — local SVG/emoji artwork only (nothing is
-        downloaded at runtime), Hindi word, Santali (Ol Chiki) word and audio.
-      </p>
+    <div className="eng-flashcards-page">
+      <header className="eng-page-head">
+        <p className="eyebrow">
+          ENGOROR VISUAL LEARNING
+        </p>
+
+        <h1>Vocabulary Flashcards</h1>
+
+        <p>
+          Visual bilingual learning cards with Hindi words,
+          Santali in Ol Chiki, and locally generated Santali audio.
+        </p>
+      </header>
+
+      <section className="eng-fc-summary">
+        <div>
+          <strong>{data?.flashcards?.length || 0}</strong>
+          <span>Visual flashcards</span>
+        </div>
+
+        <div>
+          <strong>Hindi + Santali</strong>
+          <span>Bilingual vocabulary</span>
+        </div>
+
+        <div>
+          <strong>Local Audio</strong>
+          <span>Student listening support</span>
+        </div>
+      </section>
 
       {data?.topics?.length > 0 && (
-        <div className="chip-row" role="group" aria-label="Filter by topic">
-          <button
-            type="button"
-            className={`chip${topic === '' ? ' active' : ''}`}
-            onClick={() => setTopic('')}
-          >
-            All topics
-          </button>
-          {data.topics.map((t) => (
+        <section className="eng-fc-filter">
+          <p className="eng-result-label">
+            FILTER BY TOPIC
+          </p>
+
+          <div className="eng-filter-row">
             <button
-              key={t.topic}
               type="button"
-              className={`chip${topic === t.topic ? ' active' : ''}`}
-              onClick={() => setTopic(t.topic)}
+              className={`eng-filter-chip ${
+                topic === '' ? 'active' : ''
+              }`}
+              onClick={() => setTopic('')}
             >
-              {t.label_hindi} · {t.label_english}
-              <span className="chip-count">({t.count})</span>
+              All topics
             </button>
-          ))}
-        </div>
+
+            {data.topics.map((item) => (
+              <button
+                key={item.topic}
+                type="button"
+                className={`eng-filter-chip ${
+                  topic === item.topic ? 'active' : ''
+                }`}
+                onClick={() => setTopic(item.topic)}
+              >
+                {item.label_hindi} {item.label_english}
+                <span className="eng-fc-count">
+                  {item.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
       )}
 
       {loadError && (
-        <div className="error-banner" role="alert">
-          <strong>Could not load flashcards.</strong> {loadError}
+        <div
+          className="eng-friendly-error"
+          role="alert"
+        >
+          <strong>
+            Flashcards could not be loaded.
+          </strong>
+          <span>{loadError}</span>
         </div>
       )}
 
-      {!data && !loadError && <p className="muted">Loading flashcards…</p>}
-
-      {data && (
-        <div className="flashcard-grid">
-          {visible.map((c) => (
-            <article key={c.id} className="flashcard">
-              <div className="fc-visual" aria-hidden="true">
-                {c.image_key ? (
-                  <img src={`/flashcards/${c.image_key}.svg`} alt="" loading="lazy" />
-                ) : (
-                  c.visual_emoji
-                )}
-              </div>
-              <div className="fc-hindi hindi">{c.hindi_word}</div>
-              <div className="fc-english">{c.english_word}</div>
-              {hasSantali(c) ? (
-                <div className="fc-santali ol-chiki">{c.santali_ol_chiki}</div>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-small primary"
-                  disabled={busy[c.id] === 'translate'}
-                  onClick={() => onTranslate(c)}
-                >
-                  {busy[c.id] === 'translate' ? '…' : 'Generate Santali'}
-                </button>
-              )}
-              {hasSantali(c) && (
-                <button
-                  type="button"
-                  className="btn-audio"
-                  style={{ minHeight: 38, padding: '6px 12px', fontSize: 14 }}
-                  disabled={busy[c.id] === 'audio'}
-                  onClick={() => onPlay(c)}
-                  aria-label={`Play Santali audio for ${c.english_word}`}
-                >
-                  🔊 {busy[c.id] === 'audio' ? '…' : 'Audio'}
-                </button>
-              )}
-            </article>
-          ))}
+      {!data && !loadError && (
+        <div className="eng-learning-loading">
+          Loading visual flashcards...
         </div>
       )}
 
       {data && (
-        <p className="status-detail">
-          {visible.length} card(s)
-          {topic && topicInfo.get(topic)
-            ? ` · topic: ${topicInfo.get(topic).label_english}`
-            : ''}{' '}
-          · Santali words and audio: {VALIDATION_NOTICE}.
+        <>
+          <div className="eng-fc-heading">
+            <div>
+              <p className="eng-result-label">
+                VISUAL VOCABULARY
+              </p>
+
+              <h2>Choose a card</h2>
+            </div>
+
+            <span>{visible.length} cards available</span>
+          </div>
+
+          <div className="eng-fc-grid">
+            {visible.map((card) => (
+              <article
+                key={card.id}
+                className="eng-fc-card"
+              >
+                <div className="eng-fc-card-top">
+                  <span>{card.topic}</span>
+
+                  {hasSantali(card) && (
+                    <span className="eng-ready-small">
+                      Santali ready
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  className="eng-fc-visual"
+                  aria-hidden="true"
+                >
+                  {card.image_key ? (
+                    <img
+                      src={`/flashcards/${card.image_key}.svg`}
+                      alt=""
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span>{card.visual_emoji}</span>
+                  )}
+                </div>
+
+                <div className="eng-fc-language">
+                  <p className="eng-result-label">
+                    HINDI
+                  </p>
+
+                  <h3 className="hindi">
+                    {card.hindi_word}
+                  </h3>
+
+                  <p className="eng-fc-english">
+                    {card.english_word}
+                  </p>
+                </div>
+
+                <div className="eng-fc-santali">
+                  <p className="eng-result-label">
+                    SANTALI - OL CHIKI
+                  </p>
+
+                  {hasSantali(card) ? (
+                    <div className="ol-chiki">
+                      {card.santali_ol_chiki}
+                    </div>
+                  ) : (
+                    <p>
+                      Santali word has not been generated yet.
+                    </p>
+                  )}
+                </div>
+
+                <div className="eng-fc-actions">
+                  {!hasSantali(card) && (
+                    <button
+                      type="button"
+                      className="eng-translate-button"
+                      disabled={
+                        busy[card.id] === 'translate'
+                      }
+                      onClick={() =>
+                        onTranslate(card)
+                      }
+                    >
+                      {busy[card.id] === 'translate'
+                        ? 'Translating...'
+                        : 'Generate Santali'}
+                    </button>
+                  )}
+
+                  {hasSantali(card) && (
+                    <button
+                      type="button"
+                      className="eng-audio-button"
+                      disabled={
+                        busy[card.id] === 'audio'
+                      }
+                      onClick={() => onPlay(card)}
+                    >
+                      {busy[card.id] === 'audio'
+                        ? 'Generating audio...'
+                        : 'Play Santali Audio'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+        </>
+      )}
+
+      {data && (
+        <p className="eng-fc-validation-note">
+          {VALIDATION_NOTICE}
         </p>
       )}
 
       {message && (
-        <p className="status-detail" role="status">
+        <div
+          className="eng-success-message"
+          role="status"
+        >
           {message}
-        </p>
+        </div>
       )}
+
       {error && (
-        <div className="error-banner" role="alert">
-          <strong>Action failed.</strong> {error}
+        <div
+          className="eng-friendly-error"
+          role="alert"
+        >
+          <strong>
+            Flashcard action could not be completed.
+          </strong>
+          <span>{error}</span>
         </div>
       )}
     </div>

@@ -11,12 +11,6 @@ const MAIN_NAV = [
   { to: '/flashcards', label: 'Flashcards' },
 ]
 
-const RESOURCE_NAV = [
-  { to: '/history', label: 'History' },
-  { to: '/offline-content', label: 'Offline Library' },
-  { to: '/model-status', label: 'Model Status' },
-]
-
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -30,9 +24,16 @@ export default function Layout() {
         />
       )}
 
-      <aside className={`sidebar engoror-sidebar${menuOpen ? ' open' : ''}`}>
+      <aside
+        className={`sidebar engoror-sidebar${
+          menuOpen ? ' open' : ''
+        }`}
+      >
         <div className="sidebar-brand">
-          <span className="brand-mark engoror-mark">E</span>
+          <span className="brand-mark engoror-mark">
+            E
+          </span>
+
           <div>
             <p className="brand-name">Engoror</p>
             <p className="brand-tag">Classroom AI</p>
@@ -53,25 +54,10 @@ export default function Layout() {
               {item.label}
             </NavLink>
           ))}
-
-          <p className="nav-section-label">RESOURCES</p>
-
-          {RESOURCE_NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `nav-link${isActive ? ' active' : ''}`
-              }
-              onClick={() => setMenuOpen(false)}
-            >
-              {item.label}
-            </NavLink>
-          ))}
         </nav>
 
         <div className="sidebar-foot engoror-sidebar-foot">
-          <strong>● Offline Ready</strong>
+          <strong>● Offline-first</strong>
           <span>Hindi → Santali</span>
           <span>SIH 2026 Prototype</span>
         </div>
@@ -82,7 +68,9 @@ export default function Layout() {
           <button
             type="button"
             className="hamburger"
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() =>
+              setMenuOpen((value) => !value)
+            }
             aria-expanded={menuOpen}
             aria-label="Toggle navigation menu"
           >
@@ -90,11 +78,18 @@ export default function Layout() {
           </button>
 
           <div className="topbar-mobile-brand">
-            <span className="brand-mark small">E</span>
-            <span className="topbar-title">Engoror</span>
+            <span className="brand-mark small">
+              E
+            </span>
+
+            <span className="topbar-title">
+              Engoror
+            </span>
           </div>
 
-          <span className="offline-pill">● Offline AI Ready</span>
+          <span className="offline-pill">
+            ● Offline-first
+          </span>
         </header>
 
         <main className="page engoror-page">
@@ -103,9 +98,13 @@ export default function Layout() {
 
         <footer className="footer engoror-footer">
           <span>
-            <strong>Engoror</strong> — Language should never be a barrier to learning.
+            <strong>Engoror</strong> — Language should
+            never be a barrier to learning.
           </span>
-          <span>Hindi → Santali · SIH 2026 Prototype</span>
+
+          <span>
+            Hindi → Santali · SIH 2026 Prototype
+          </span>
         </footer>
       </div>
     </div>
