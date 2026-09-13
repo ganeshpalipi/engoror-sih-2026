@@ -2061,3 +2061,22 @@ button.eng-ws-secondary-action {
     margin: 14px 16px 0;
   }
 }
+
+.eng-showcase-content-note {
+  margin: 14px 0 20px;
+  padding: 18px;
+  border: 1px solid #d7c79d;
+  border-radius: 14px;
+  background: #fffaf0;
+}
+
+.eng-showcase-content-note strong {
+  color: var(--eng-navy);
+}
+
+.eng-showcase-content-note p {
+  margin: 6px 0 0;
+  color: var(--eng-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
