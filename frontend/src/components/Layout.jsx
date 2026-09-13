@@ -1,3 +1,4 @@
+import { IS_SHOWCASE_MODE } from '../services/api'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
@@ -91,6 +92,17 @@ export default function Layout() {
             ● Offline-first
           </span>
         </header>
+        {IS_SHOWCASE_MODE && (
+  <div className="eng-showcase-banner">
+    <strong>Online Showcase</strong>
+
+    <span>
+      Engoror's AI inference runs locally on the classroom device.
+      Use the local offline demo for speech, translation, Santali audio,
+      lessons and generated classroom material.
+    </span>
+  </div>
+)}
 
         <main className="page engoror-page">
           <Outlet />

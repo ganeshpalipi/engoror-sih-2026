@@ -2033,3 +2033,31 @@ button.eng-ws-secondary-action {
   }
 }
 
+/* Engoror public showcase notice */
+
+.eng-showcase-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 18px 36px 0;
+  padding: 13px 16px;
+  border: 1px solid #e7c77f;
+  border-radius: 13px;
+  background: #fff8e8;
+  color: #6f4a08;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.eng-showcase-banner strong {
+  flex: 0 0 auto;
+  color: #9a5c00;
+}
+
+@media (max-width: 700px) {
+  .eng-showcase-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    margin: 14px 16px 0;
+  }
+}
