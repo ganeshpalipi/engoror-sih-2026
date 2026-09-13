@@ -341,3 +341,218 @@ p { margin: 0 0 10px; }
   font-family: Consolas, 'Courier New', monospace;
   font-size: 13px;
 }
+
+/* =========================================================
+   Phase 5 — FLN content: filters, flashcards, worksheets
+   ========================================================= */
+
+/* Self-hosted Ol Chiki font (offline; U+1C50-U+1C7F + basic latin) */
+@font-face {
+  font-family: 'Noto Sans Ol Chiki';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/NotoSansOlChiki-olchiki.woff2') format('woff2');
+  unicode-range: U+1C50-1C7F, U+20B9;
+}
+@font-face {
+  font-family: 'Noto Sans Ol Chiki';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/NotoSansOlChiki-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F;
+}
+
+/* ----- Filter chips (topic / category / skill pickers) ----- */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.chip {
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--navy);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 40px;
+}
+.chip:hover { background: var(--bg); }
+.chip.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+.chip .chip-count {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-left: 4px;
+}
+
+/* ----- Content cards (lessons / phrases) ----- */
+.content-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+}
+.content-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  cursor: pointer;
+  border-left: 4px solid var(--border);
+  text-align: left;
+  font-family: inherit;
+  width: 100%;
+}
+.content-card:hover { border-left-color: var(--green); }
+.content-card.selected { border-left-color: var(--orange); background: #fffdf8; }
+.content-card h3 { margin: 0 0 2px; font-size: 17px; color: var(--navy); }
+.content-card .card-sub { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+.card-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.mini-chip {
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.mini-chip.warm { background: var(--orange-soft); color: var(--orange); }
+
+/* ----- Bilingual text blocks ----- */
+.text-block {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 12px 14px;
+  margin: 8px 0;
+  font-size: 17px;
+  white-space: pre-wrap;
+}
+.text-block.hindi-block { background: var(--bg); }
+.text-block.santali-block { background: var(--green-soft); font-size: 19px; line-height: 1.8; }
+.placeholder-block {
+  border: 1.5px dashed var(--orange);
+  background: var(--orange-soft);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0;
+  color: #8a4d0d;
+  font-size: 14px;
+}
+
+/* ----- Audio + action rows ----- */
+.action-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0; }
+.btn-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--green-soft);
+  color: var(--green);
+  border: 1.5px solid var(--green);
+  border-radius: var(--radius);
+  padding: 9px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  min-height: 44px;
+}
+.btn-audio:hover { background: #d9e8e0; }
+.btn-audio:disabled { opacity: 0.55; cursor: wait; }
+.btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--navy);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-small:hover { background: var(--bg); }
+.btn-small.primary { border-color: var(--green); color: var(--green); }
+.btn-small.primary:hover { background: var(--green-soft); }
+
+/* ----- Flashcards ----- */
+.flashcard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 14px;
+  margin: 14px 0;
+}
+.flashcard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.flashcard .fc-visual {
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 54px;
+  line-height: 1;
+}
+.flashcard .fc-visual img { width: 84px; height: 84px; object-fit: contain; }
+.flashcard .fc-hindi { font-size: 21px; font-weight: 700; color: var(--navy); }
+.flashcard .fc-english { color: var(--muted); font-size: 13px; }
+.flashcard .fc-santali {
+  font-size: 19px;
+  color: var(--green);
+  background: var(--green-soft);
+  border-radius: 6px;
+  padding: 3px 10px;
+}
+
+/* ----- Worksheet generator ----- */
+.worksheet-form { max-width: 640px; }
+.radio-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 12px; }
+select.worksheet-select {
+  font-family: inherit;
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--navy);
+  min-height: 46px;
+  min-width: 240px;
+}
+.ws-result {
+  border: 1.5px solid var(--green);
+  border-radius: var(--radius);
+  background: var(--green-soft);
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.ws-result h3 { margin-top: 0; }
+.ws-frame {
+  width: 100%;
+  height: 620px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  margin-top: 10px;
+}
+
+/* Responsive: flashcards keep two columns on narrow phones */
+@media (max-width: 420px) {
+  .flashcard-grid { grid-template-columns: repeat(2, 1fr); }
+  .flashcard .fc-visual, .flashcard .fc-visual img { width: 64px; height: 64px; }
+  .flashcard .fc-visual { font-size: 40px; }
+}

@@ -15,12 +15,10 @@ const PIPELINE_STEPS = [
 const ROADMAP = [
   { phase: 'Phase 1', label: 'Folder structure, FastAPI + Vite skeletons, health endpoint, SQLite config', done: true },
   { phase: 'Phase 2', label: 'SQLite tables + seed data + real Hindi → Santhali translation (IndicTrans2, local)', done: true },
-  { phase: 'Phase 3', label: 'Offline Hindi ASR module', done: false },
-  { phase: 'Phase 4', label: 'Offline Santhali TTS module', done: false },
-  { phase: 'Phase 5', label: 'Full speech-to-speech pipeline with latency tracking', done: false },
-  { phase: 'Phase 6', label: 'Frontend pages connected to live APIs', done: false },
-  { phase: 'Phase 7–9', label: 'Phrase pack, FLN lessons, worksheets, flashcards, offline sync', done: false },
-  { phase: 'Phase 10', label: 'Testing, latency measurement and optimisation', done: false },
+  { phase: 'Phase 3', label: 'Offline Hindi ASR (faster-whisper, CPU INT8) + speech-translate pipeline', done: true },
+  { phase: 'Phase 4', label: 'Offline Santhali TTS (Ol Chiki → speech) + Student Audio in the pipeline', done: true },
+  { phase: 'Phase 5', label: 'FLN classroom content: lesson bank, phrase pack, worksheets, flashcards (offline)', done: true },
+  { phase: 'Next', label: 'Native-speaker content validation, richer lesson material, sync & analytics (planned)', done: false },
 ]
 
 export default function Home() {

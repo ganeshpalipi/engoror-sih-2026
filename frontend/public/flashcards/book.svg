@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Open book">
+  <g fill="none" stroke="#1e5c3d" stroke-width="4" stroke-linejoin="round">
+    <path d="M60 34 C48 24, 26 22, 16 26 L16 88 C26 84, 48 86, 60 96 Z" fill="#ffffff"/>
+    <path d="M60 34 C72 24, 94 22, 104 26 L104 88 C94 84, 72 86, 60 96 Z" fill="#ffffff"/>
+    <line x1="60" y1="34" x2="60" y2="96" stroke="#1e5c3d"/>
+  </g>
+  <g stroke="#d97b21" stroke-width="3" stroke-linecap="round">
+    <line x1="26" y1="40" x2="48" y2="42"/>
+    <line x1="26" y1="52" x2="48" y2="54"/>
+    <line x1="26" y1="64" x2="48" y2="66"/>
+    <line x1="72" y1="42" x2="94" y2="40"/>
+    <line x1="72" y1="54" x2="94" y2="52"/>
+    <line x1="72" y1="66" x2="94" y2="64"/>
+  </g>
+</svg>

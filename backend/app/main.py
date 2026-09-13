@@ -19,15 +19,26 @@ from app.config import settings
 from app.database import Base, engine
 from app.models import (  # noqa: F401 (registers tables)
     AsrTranscription,
-    FlnLesson,
     ClassroomPhrase,
+    Flashcard,
+    FlnLesson,
     ModelMetadata,
     TranslationHistory,
 )
 from app.ai.asr_service import asr_service
 from app.ai.model_manager import model_manager
 from app.ai.tts_service import tts_service
-from app.routers import asr, health, translation, tts
+from app.routers import (
+    asr,
+    flashcards,
+    fln,
+    health,
+    phrases,
+    translation,
+    tts,
+    worksheets,
+)
+from app.services.content_seed import ensure_phase5_schema, seed_phase5_content
 from app.services.seed_service import seed_if_empty
 from app.utils.logger import setup_logging
 
@@ -53,8 +64,15 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     logger.info("Database ready: %s", settings.DATABASE_URL)
 
+    # Phase 5: add the new columns to existing tables (idempotent, additive)
+    ensure_phase5_schema(engine)
+
     # Seed safe development data (idempotent, no invented Santali text)
     seed_if_empty()
+
+    # Phase 5: lesson bank / phrase pack / flashcards (idempotent, Hindi
+    # source only - Santali is generated on demand by the Phase 2 service)
+    seed_phase5_content()
 
     # Warm the translation model from the local cache in the background
     # (never downloads; if missing, the first request handles setup)
@@ -101,6 +119,10 @@ app.include_router(health.router)
 app.include_router(translation.router)
 app.include_router(asr.router)
 app.include_router(tts.router)
+app.include_router(fln.router)
+app.include_router(phrases.router)
+app.include_router(flashcards.router)
+app.include_router(worksheets.router)
 
 
 # ----- Global safety net -----

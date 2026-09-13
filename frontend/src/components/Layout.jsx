@@ -57,7 +57,7 @@ export default function Layout() {
         <p className="sidebar-foot">
           Offline-first · SIH 2026
           <br />
-          Phase 4: offline Santali TTS live
+          Phase 5: FLN classroom content live
         </p>
       </aside>
 
